@@ -5,7 +5,7 @@ import string
 
 st.set_page_config(
     page_title = "Physical Dimensions",
-    page_icon = "🏀",
+    page_icon = ":basketball:",
     initial_sidebar_state="collapsed"
 )
 
@@ -14,20 +14,16 @@ hide_decoration_bar_style = '''<style>header {visibility: hidden;}</style>'''
 st.markdown(hide_decoration_bar_style, unsafe_allow_html=True)
 
 
-
 ## st.image()
 
-st.markdown("Determine what NBA position would most suit a player based on Physical Dimensions and/or Statistics.")
-
-st.sidebar.write("Enter physical dimensions to see what position is most suitable")
-
+st.markdown("Determine what NBA position would most suit a player based on Physical Dimensions or Statistics.")
 
 def get_key(val, my_dict):
     for key, value in my_dict.items():
         if val == value:
             return key
 
-password_labels = {"weak": 0, "average":1, "strong": 2}
+password_labels = {"weak": 0, "average":1, "strong": 2, "Please submit either player dimensions or statistics above": -1}
 
 # def load_model(model_file):
 #     loaded_model = joblib.load(open(os.path.join(model_file), 'rb'))
@@ -43,53 +39,59 @@ def main_physical():
     
     # st.image()
     
+    col1, col2 = st.columns(2)
+    prediction = -1
     
-    with st.expander("Physical Dimensions"):
-        
-        ## Old:
-        st.subheader("What are your player dimensions?")
-        password = st.text_input("Enter Password", "", key = "dimensions-input")
-        
-        model_list = ["LR", "NB"]
-        model_choice = st.selectbox("Select ML Model", model_list, key = "dimensions-model-choice")
-        
-        if st.button("Classify", key = "dimensions-classify"):
-            # vect_password = pswd_cv.transform([password]).toarray()
-            if model_choice == "LR":
-                prediction = 1
-                # predictor = load_model("models/logit_pswd_model.pkl")
-                # prediction = predictor.predict(vect_password)
-            else:
-                prediction = 0
-                # predictor = load_model("models/nv_pswd_model.pkl")
-                # prediction = predictor.predict(vect_password)
-            final_result = get_key(prediction, password_labels)
-            st.info(final_result)
-        ##
-    
-    with st.expander("Player Statistics"):
-
-        ## Old:
-        st.subheader("What are your player statistics?")
-        password = st.text_input("Enter Pass", "", key = "stats-input")
-        
-        model_list = ["LR", "NB"]
-        model_choice = st.selectbox("Select ML Model", model_list, key = "stats-model-choice")
-        
-        if st.button("Classify", key = "stats-classify"):
-            # vect_password = pswd_cv.transform([password]).toarray()
-            if model_choice == "LR":
-                prediction = 1
-                # predictor = load_model("models/logit_pswd_model.pkl")
-                # prediction = predictor.predict(vect_password)
-            else:
-                prediction = 0
-                # predictor = load_model("models/nv_pswd_model.pkl")
-                # prediction = predictor.predict(vect_password)
-            final_result = get_key(prediction, password_labels)
-            st.info(final_result)
-        ##
+    with col1:
+        with st.expander("Physical Dimensions :muscle:"):
             
+            ## Old:
+            st.subheader("What are your player dimensions?")
+            password = st.text_input("Enter Password", "", key = "dimensions-input")
+            
+            model_list = ["LR", "NB"]
+            model_choice = st.selectbox("Select ML Model", model_list, key = "dimensions-model-choice")
+            
+            if st.button("Classify", key = "dimensions-classify"):
+                # vect_password = pswd_cv.transform([password]).toarray()
+                if model_choice == "LR":
+                    prediction = 1
+                    # predictor = load_model("models/logit_pswd_model.pkl")
+                    # prediction = predictor.predict(vect_password)
+                else:
+                    prediction = 0
+                    # predictor = load_model("models/nv_pswd_model.pkl")
+                    # prediction = predictor.predict(vect_password)
+    
+    with col2:
+        with st.expander("Player Statistics :trophy:"):
+
+            ## Old:
+            st.subheader("What are your player statistics?")
+            password = st.text_input("Enter Pass", "", key = "stats-input")
+            
+            model_list = ["LR", "NB"]
+            model_choice = st.selectbox("Select ML Model", model_list, key = "stats-model-choice")
+            
+            if st.button("Classify", key = "stats-classify"):
+                # vect_password = pswd_cv.transform([password]).toarray()
+                if model_choice == "LR":
+                    prediction = 1
+                    # predictor = load_model("models/logit_pswd_model.pkl")
+                    # prediction = predictor.predict(vect_password)
+                else:
+                    prediction = 0
+                    # predictor = load_model("models/nv_pswd_model.pkl")
+                    # prediction = predictor.predict(vect_password)
+    
+    final_result = get_key(prediction, password_labels)
+    
+    if prediction == -1:
+        st.warning(final_result)
+    else:
+        st.info(final_result)
+    
+                
     st.markdown("---")
 
     st.markdown(
