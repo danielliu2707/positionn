@@ -13,8 +13,7 @@ st.set_page_config(
 hide_decoration_bar_style = '''<style>header {visibility: hidden;}</style>'''
 st.markdown(hide_decoration_bar_style, unsafe_allow_html=True)
 
-
-## st.image()
+st.image(os.path.join("img", "positionn-logo.png"))
 
 st.markdown("Determine what NBA position would most suit a player based on Physical Dimensions or Statistics.")
 
@@ -36,9 +35,6 @@ def password_generator(size: int):
 
 
 def main_physical():
-    
-    # st.image()
-    
     col1, col2 = st.columns(2)
     prediction = -1
     
@@ -89,6 +85,8 @@ def main_physical():
     if prediction == -1:
         st.warning(final_result)
     else:
+        ## TODO: Modify the following code to output what I desire. Example: Position, Some Details of the position such as avg dimensions for dimension
+        ## and average statistics for stats. Also, all stars at this level. Basically produce a dashboard for this statistic... Note: Can do this later...
         st.info(final_result)
     
                 
