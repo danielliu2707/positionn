@@ -5,6 +5,7 @@ import os
 import string
 import pickle
 from PIL import Image   # For inserting image. You are a guard!!!
+from datetime import datetime
 
 st.set_page_config(
     page_title = "positionn",
@@ -25,7 +26,7 @@ def get_position(predicted_idx, my_dict):
         if value == predicted_idx:
             return key
 
-position_dict = {"Foward": 0, "Center": 2, "Guard": 1, "Please submit either player dimensions or statistics above": -1}
+position_dict = {"Foward": "F", "Center": "C", "Guard": "G", "Please submit either player dimensions or statistics above": -1}
 
 # Loading in ML Model
 @st.cache_data
@@ -39,23 +40,18 @@ def main_physical():
     with col1:
         with st.expander("Physical Dimensions :muscle:", expanded=True):
             st.subheader("What are your physical dimensions?")
-
             # Request user input and convert into matrix
-            height = st.number_input("Enter height (m)", min_value=100.00, step=0.01)
-            weight = st.number_input("Enter weight (kg)", min_value=30.00, step = 0.01)
-            
+            current_year = datetime.now().year
+            height = st.number_input("Enter height (m)", min_value=100.00, max_value=250.00, value=None, help="Enter a height between 100-250cm")
+            weight = st.number_input("Enter weight (kg)", min_value=30.00, max_value=500.00, value=None, help="Enter a weight between 30-500kg")
+            year_start = st.number_input("Enter the year you started competitive basketball", min_value=1900, max_value=current_year, step=1, value=None, help=f"Enter a starting year between: 1900-{current_year}")
+            year_end = st.number_input("Enter the year you stopped competitive basketball", min_value=year_start, max_value=current_year, value=None, help=f"Enter a ending year between: {year_start}-{current_year}")
             # Predict outcome and obtain index associated with a players position
             if st.button("Classify", key = "dimensions-classify"):
-                physical_predictor = load_model(os.path.join("models", "model.sav"))
-                input_features = (np.array([[height, weight, weight / (height/100)**2]]))
-                predicted_arr = physical_predictor.predict(input_features)
-                
-                # [0,0] prediction means a center
-                if np.sum(predicted_arr) == 0:
-                    predicted_idx = 2
-                # [0,1] or [1,0] means Guard or Forward prediction
-                else:
-                    predicted_idx = int(np.nonzero(predicted_arr)[1])
+                physical_predictor = load_model(os.path.join("models", "dimensions_rf.sav"))
+                ohe_predictor = load_model(os.path.join("models", "ohe_rf.sav"))
+                input_features = (np.array([[height, weight, year_start, year_end, (weight / (height/100)**2)]]))
+                predicted_idx = ohe_predictor.inverse_transform(physical_predictor.predict(input_features))[0][0]
             
     with col2:
         with st.expander("Player Statistics :trophy:", expanded=True):
