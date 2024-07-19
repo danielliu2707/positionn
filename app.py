@@ -48,11 +48,15 @@ def main_physical():
             year_end = st.number_input("Enter the year you stopped competitive basketball", min_value=year_start, max_value=current_year, value=None, help=f"Enter a ending year between: {year_start}-{current_year}")
             # Predict outcome and obtain index associated with a players position
             if st.button("Classify", key = "dimensions-classify"):
-                physical_predictor = load_model(os.path.join("models", "dimensions_rf.sav"))
-                ohe_predictor = load_model(os.path.join("models", "ohe_rf.sav"))
-                input_features = (np.array([[height, weight, year_start, year_end, (weight / (height/100)**2)]]))
-                predicted_idx = ohe_predictor.inverse_transform(physical_predictor.predict(input_features))[0][0]
-            
+                while (True):
+                    try:
+                        physical_predictor = load_model(os.path.join("models", "dimensions_rf.sav"))
+                        ohe_predictor = load_model(os.path.join("models", "ohe.sav"))
+                        input_features = (np.array([[height, weight, year_start, year_end, (weight / (height/100)**2)]]))
+                        predicted_idx = ohe_predictor.inverse_transform(physical_predictor.predict(input_features))[0][0]
+                        break
+                    except ValueError:
+                        height += 0.01
     with col2:
         with st.expander("Player Statistics :trophy:", expanded=True):
 
