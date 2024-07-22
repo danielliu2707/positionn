@@ -26,7 +26,7 @@ def get_position(predicted_idx, my_dict):
         if value == predicted_idx:
             return key
 
-position_dict = {"Foward": "F", "Center": "C", "Guard": "G", "Please submit either player dimensions or statistics above": -1}
+position_dict = {"Forward": "F", "Center": "C", "Guard": "G", "Please submit either player dimensions or statistics above": -1}
 
 # Loading in ML Model
 @st.cache_data
@@ -57,6 +57,8 @@ def main_physical():
                         break
                     except ValueError:
                         height += 0.01
+    
+    
     with col2:
         with st.expander("Player Statistics :trophy:", expanded=True):
 
@@ -79,15 +81,41 @@ def main_physical():
                     # prediction = predictor.predict(vect_password)
     
     # Map index to position (Guard, Forward, Center)
-    final_result = get_position(predicted_idx, position_dict)
+    final_position = get_position(predicted_idx, position_dict)
+    
+    st.divider()
+    
     
     if predicted_idx == -1:
-        st.warning(final_result)
+        st.warning(final_position)
     else:
         ## TODO: Modify the following code to output what I desire. Example: Position, Some Details of the position such as avg dimensions for dimension
         ## and average statistics for stats. Also, all stars at this level. Basically produce a dashboard for this statistic... Note: Can do this later...
         ## Define function for achieving this
-        st.info(final_result)
+        if final_position == "Guard":
+            st.markdown("<h1 style='text-align: center; color: black;'>You are a</h1> <h1 style='text-align: center; color: #c0b8d4;'><u>Guard</u></h1>", unsafe_allow_html=True)
+            
+            st.divider()
+            
+            st.markdown("<h1 style='text-align: center; color: black;'>What playstyle are you?</h1>", unsafe_allow_html=True)
+            
+            st.text("  ")
+            
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.markdown("<p style='text-align: center; color: black;'>3 Point Playmaker</p>", unsafe_allow_html=True)
+                st.image("img/steph-curry-bg.png")
+            with col2:
+                st.image("img/steph-curry.jpg")
+            with col3:
+                st.image("img/steph-curry.jpg")
+            
+            
+        elif final_position == "Forward":
+            st.markdown("<h1 style='text-align: center; color: black;'>You are a</h1> <h1 style='text-align: center; color: #d4b8c6;'><u>Forward</u></h1>", unsafe_allow_html=True)
+        else:
+            st.markdown("<h1 style='text-align: center; color: black;'>You are a</h1> <h1 style='text-align: center; color: #bcd4b8;'><u>Center</u></h1>", unsafe_allow_html=True)
+            
     
                 
     st.markdown("---")
