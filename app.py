@@ -93,22 +93,31 @@ def main_physical():
         ## and average statistics for stats. Also, all stars at this level. Basically produce a dashboard for this statistic... Note: Can do this later...
         ## Define function for achieving this
         if final_position == "Guard":
-            st.markdown("<h1 style='text-align: center; color: black;'>You are a</h1> <h1 style='text-align: center; color: #c0b8d4;'><u>Guard</u></h1>", unsafe_allow_html=True)
+            st.image(os.path.join("img", "guard-classification.png"))
             
             st.divider()
             
-            st.markdown("<h1 style='text-align: center; color: black;'>What playstyle are you?</h1>", unsafe_allow_html=True)
-            
-            st.text("  ")
+            st.image(os.path.join("img", "find-your-playstyle.png"))
             
             col1, col2, col3 = st.columns(3)
             with col1:
                 st.markdown("<p style='text-align: center; color: black;'>3 Point Playmaker</p>", unsafe_allow_html=True)
-                st.image("img/steph-curry-bg.png")
+                st.image("img/steph-curry.png")
+                st.text("  ")
+                st.markdown("<p style='text-align: center; color: black;'>Back to the basket</p>", unsafe_allow_html=True)
+                st.image("img/jalen-brunson.png")
             with col2:
-                st.image("img/steph-curry.jpg")
+                st.markdown("<p style='text-align: center; color: black;'>Floor General</p>", unsafe_allow_html=True)
+                st.image("img/chris-paul.png")
+                st.text("  ")
+                st.markdown("<p style='text-align: center; color: black;'>Midrange Shot Creator</p>", unsafe_allow_html=True)
+                st.image("img/demar-derozan.png")
             with col3:
-                st.image("img/steph-curry.jpg")
+                st.markdown("<p style='text-align: center; color: black;'>Lockdown Defender</p>", unsafe_allow_html=True)
+                st.image("img/alex-caruso.png")
+                st.text("  ")
+                st.markdown("<p style='text-align: center; color: black;'>2 Way Scorer</p>", unsafe_allow_html=True)
+                st.image("img/jalen-brown.png")
             
             
         elif final_position == "Forward":
