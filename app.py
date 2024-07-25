@@ -33,6 +33,42 @@ position_dict = {"Forward": "F", "Center": "C", "Guard": "G", "Please submit eit
 def load_model(model):
     return pickle.load(open(model, 'rb'))
 
+# Show playstyles outpiut
+def show_playstyles(position: str, players: list[str], styles: list[str]):
+    """_summary_
+
+    Args:
+        position (str): _description_
+        players (list[str]): _description_
+    """
+    # Load headers
+    st.image(os.path.join("img", f"{position}-classification.png"))
+    st.divider()
+    st.image(os.path.join("img", "find-your-playstyle.png"))
+    p1, p2, p3, p4, p5, p6 = players[0], players[1], players[2], players[3], players[4], players[5]
+    s1, s2, s3, s4, s5, s6 = styles[0], styles[1], styles[2], styles[3], styles[4], styles[5]
+    
+    # Show playstyle text and associated player images
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown(f"<p style='text-align: center; color: black;'>{s1}</p>", unsafe_allow_html=True)
+        st.image(f"img/{p1}.png")
+        st.text("  ")
+        st.markdown(f"<p style='text-align: center; color: black;'>{s2}</p>", unsafe_allow_html=True)
+        st.image(f"img/{p2}.png")
+    with col2:
+        st.markdown(f"<p style='text-align: center; color: black;'>{s3}</p>", unsafe_allow_html=True)
+        st.image(f"img/{p3}.png")
+        st.text("  ")
+        st.markdown(f"<p style='text-align: center; color: black;'>{s4}</p>", unsafe_allow_html=True)
+        st.image(f"img/{p4}.png")
+    with col3:
+        st.markdown(f"<p style='text-align: center; color: black;'>{s5}</p>", unsafe_allow_html=True)
+        st.image(f"img/{p5}.png")
+        st.text("  ")
+        st.markdown(f"<p style='text-align: center; color: black;'>{s6}</p>", unsafe_allow_html=True)
+        st.image(f"img/{p6}.png")
+
 def main_physical():
     col1, col2 = st.columns(2)
     predicted_idx = -1
@@ -85,48 +121,29 @@ def main_physical():
     
     st.divider()
     
-    
     if predicted_idx == -1:
         st.warning(final_position)
     else:
-        ## TODO: Modify the following code to output what I desire. Example: Position, Some Details of the position such as avg dimensions for dimension
-        ## and average statistics for stats. Also, all stars at this level. Basically produce a dashboard for this statistic... Note: Can do this later...
-        ## Define function for achieving this
         if final_position == "Guard":
-            st.image(os.path.join("img", "guard-classification.png"))
-            
-            st.divider()
-            
-            st.image(os.path.join("img", "find-your-playstyle.png"))
-            
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                st.markdown("<p style='text-align: center; color: black;'>3 Point Playmaker</p>", unsafe_allow_html=True)
-                st.image("img/steph-curry.png")
-                st.text("  ")
-                st.markdown("<p style='text-align: center; color: black;'>Back to the basket</p>", unsafe_allow_html=True)
-                st.image("img/jalen-brunson.png")
-            with col2:
-                st.markdown("<p style='text-align: center; color: black;'>Floor General</p>", unsafe_allow_html=True)
-                st.image("img/chris-paul.png")
-                st.text("  ")
-                st.markdown("<p style='text-align: center; color: black;'>Midrange Shot Creator</p>", unsafe_allow_html=True)
-                st.image("img/demar-derozan.png")
-            with col3:
-                st.markdown("<p style='text-align: center; color: black;'>Lockdown Defender</p>", unsafe_allow_html=True)
-                st.image("img/alex-caruso.png")
-                st.text("  ")
-                st.markdown("<p style='text-align: center; color: black;'>2 Way Scorer</p>", unsafe_allow_html=True)
-                st.image("img/jalen-brown.png")
-            
-            
+            show_playstyles(position="guard",
+                            players=["steph-curry", "jalen-brunson", "chris-paul",
+                                      "demar-derozan", "alex-caruso", "jalen-brown"],
+                            styles=["3 Point Playmaker", "Back to the basket", "Floor General",
+                             "Midrange Shot Creator", "Lockdown Defender", "2 Way Scorer"]
+                            )
         elif final_position == "Forward":
-            st.markdown("<h1 style='text-align: center; color: black;'>You are a</h1> <h1 style='text-align: center; color: #d4b8c6;'><u>Forward</u></h1>", unsafe_allow_html=True)
+            show_playstyles(position="forward",
+                            players=["og-anunoby", "mikal-bridges", "lebron-james",
+                                      "giannis-antetokounmpo", "kevin-durant", "kawhi-leonard"],
+                            styles=["3&D Wing", "Slashing Playmaker", "Point Forward",
+                             "Interior Threat", "Unguardable Unicorn", "3 Level Scorer"])
         else:
-            st.markdown("<h1 style='text-align: center; color: black;'>You are a</h1> <h1 style='text-align: center; color: #bcd4b8;'><u>Center</u></h1>", unsafe_allow_html=True)
-            
-    
-                
+            show_playstyles(position="center",
+                            players=["kristaps-porzingis", "rudy-gobert", "dereck-lively",
+                                      "nikola-jokic", "victor-wembanyama", "domantas-sabonis"],
+                            styles=["Stretch Big", "Defensive Anchor", "Lob Threat",
+                             "Playmaking Big", "Modern Unicorn", "Back To The Basket"])
+
     st.markdown("---")
 
     st.markdown(
