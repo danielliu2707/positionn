@@ -4,7 +4,6 @@ import numpy as np
 import os
 import string
 import pickle
-from PIL import Image   # For inserting image. You are a guard!!!
 from datetime import datetime
 
 st.set_page_config(
@@ -21,9 +20,19 @@ st.markdown(hide_decoration_bar_style, unsafe_allow_html=True)
 st.image(os.path.join("img", "positionn-logo.png"))
 st.markdown("Determine what NBA position best suits a player based on their Physical Dimensions or Statistics.")
 
-def get_position(predicted_idx, my_dict):
+def get_position(predicted_pos: str, my_dict: dict):
+    """
+    Maps the Machine Learning model output (G, F, C) to their expanded names (Guard, Forward, Center).
+
+    Args:
+        predicted_pos (str): The machine learning output (G, F, C)
+        my_dict (dict): The mapping of model output to expanded names
+
+    Returns:
+        str: The expanded position name
+    """
     for key, value in my_dict.items():
-        if value == predicted_idx:
+        if value == predicted_pos:
             return key
 
 position_dict = {"Forward": "F", "Center": "C", "Guard": "G", "Please submit either player dimensions or statistics above": -1}
@@ -33,13 +42,15 @@ position_dict = {"Forward": "F", "Center": "C", "Guard": "G", "Please submit eit
 def load_model(model):
     return pickle.load(open(model, 'rb'))
 
-# Show playstyles outpiut
+# Show playstyles output
 def show_playstyles(position: str, players: list[str], styles: list[str]):
-    """_summary_
+    """
+    Loads playstyle text and images following the position classification.
 
     Args:
-        position (str): _description_
-        players (list[str]): _description_
+        position (str): The classified position ("guard", "forward", "center")
+        players (list[str]): A list of NBA players who represent a playstyle and whose images will be shown (e.g. "jalen-brunson")
+        styles (list[str]): A list of playstyles that will be represented as text (e.g. "Stretch Big")
     """
     # Load headers
     st.image(os.path.join("img", f"{position}-classification.png"))
@@ -68,35 +79,50 @@ def show_playstyles(position: str, players: list[str], styles: list[str]):
         st.text("  ")
         st.markdown(f"<p style='text-align: center; color: black;'>{s6}</p>", unsafe_allow_html=True)
         st.image(f"img/{p6}.png")
+        
+def collapse_expander():
+    """
+    Collpases expander container to easily show predicted position for first run of app
+    """
+    st.session_state['expander'] = False
 
-def main_physical():
+def main():
     col1, col2 = st.columns(2)
-    predicted_idx = -1
+    predicted_pos = -1
     
+    # Initialize expander to True
+    if 'expander' not in st.session_state:
+        st.session_state['expander'] = True
+    
+    # Define first container
     with col1:
-        with st.expander("Physical Dimensions :muscle:", expanded=True):
+        with st.expander("Physical Dimensions :muscle:", expanded=st.session_state['expander']):
+            # Request user input
             st.subheader("What are your physical dimensions?")
-            # Request user input and convert into matrix
             current_year = datetime.now().year
             height = st.number_input("Enter height (m)", min_value=100.00, max_value=250.00, value=None, help="Enter a height between 100-250cm")
             weight = st.number_input("Enter weight (kg)", min_value=30.00, max_value=500.00, value=None, help="Enter a weight between 30-500kg")
-            year_start = st.number_input("Enter the year you started competitive basketball", min_value=1900, max_value=current_year, step=1, value=None, help=f"Enter a starting year between: 1900-{current_year}")
-            year_end = st.number_input("Enter the year you stopped competitive basketball", min_value=year_start, max_value=current_year, value=None, help=f"Enter a ending year between: {year_start}-{current_year}")
-            # Predict outcome and obtain index associated with a players position
-            if st.button("Classify", key = "dimensions-classify"):
+            year_start = st.number_input("Enter the year you started competitive basketball", min_value=1900, max_value=current_year,
+                                         step=1, value=None, help=f"Enter a starting year between: 1900-{current_year}")
+            year_end = st.number_input("Enter the year you stopped competitive basketball", min_value=year_start, max_value=current_year,
+                                       value=None, help=f"Enter a ending year between: {year_start}-{current_year}")
+            
+            # Predict outcome and obtain predicted position
+            if st.button("Classify", key = "dimensions-classify", on_click = collapse_expander):
                 while (True):
                     try:
                         physical_predictor = load_model(os.path.join("models", "dimensions_rf.sav"))
                         ohe_predictor = load_model(os.path.join("models", "ohe.sav"))
                         input_features = (np.array([[height, weight, year_start, year_end, (weight / (height/100)**2)]]))
-                        predicted_idx = ohe_predictor.inverse_transform(physical_predictor.predict(input_features))[0][0]
-                        break
+                        predicted_pos = ohe_predictor.inverse_transform(physical_predictor.predict(input_features))[0][0]   # obtain prediction using models
+                        break 
+                    # If model cannot output using input features, slightly adjust height to ensure valid prediction output
                     except ValueError:
                         height += 0.01
     
-    
+    # Define second container
     with col2:
-        with st.expander("Player Statistics :trophy:", expanded=True):
+        with st.expander("Player Statistics :trophy:", expanded=st.session_state['expander']):
 
             ## Old:
             st.subheader("What are your player statistics?")
@@ -105,7 +131,7 @@ def main_physical():
             model_list = ["LR", "NB"]
             model_choice = st.selectbox("Select ML Model", model_list, key = "stats-model-choice")
             
-            if st.button("Classify", key = "stats-classify"):
+            if st.button("Classify", key = "stats-classify", on_click = collapse_expander):
                 # vect_password = pswd_cv.transform([password]).toarray()
                 if model_choice == "LR":
                     prediction = 1
@@ -117,12 +143,14 @@ def main_physical():
                     # prediction = predictor.predict(vect_password)
     
     # Map index to position (Guard, Forward, Center)
-    final_position = get_position(predicted_idx, position_dict)
+    final_position = get_position(predicted_pos, position_dict)
     
     st.divider()
     
-    if predicted_idx == -1:
-        st.warning(final_position)
+    # Capture case where there is no prediction from model
+    if predicted_pos == -1:
+        st.warning("There was no prediction from the model as your dimensions/statistics were too abnormal")
+    # If valid prediction, output playstyles
     else:
         if final_position == "Guard":
             show_playstyles(position="guard",
@@ -143,7 +171,7 @@ def main_physical():
                                       "nikola-jokic", "victor-wembanyama", "domantas-sabonis"],
                             styles=["Stretch Big", "Defensive Anchor", "Lob Threat",
                              "Playmaking Big", "Modern Unicorn", "Back To The Basket"])
-
+            
     st.markdown("---")
 
     st.markdown(
@@ -155,4 +183,4 @@ def main_physical():
     )
 
 if __name__ == "__main__":
-    main_physical()
+    main()
