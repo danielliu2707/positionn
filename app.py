@@ -5,6 +5,7 @@ import os
 import string
 import pickle
 from datetime import datetime
+from similar_player_dimensions import SimilarPlayerDimensions
 
 st.set_page_config(
     page_title = "positionn",
@@ -119,6 +120,9 @@ def main():
                     # If model cannot output using input features, slightly adjust height to ensure valid prediction output
                     except ValueError:
                         height += 0.01
+                # Obtain most similar player prediction and output
+                similar_player_model = load_model(os.path.join("models", "similar_player_dim.pkl"))
+                similar_player = similar_player_model.predict_similar_player(height, weight, (weight / (height/100)**2), predicted_pos)
     
     # Define second container
     with col2:
@@ -172,6 +176,10 @@ def main():
                             styles=["Stretch Big", "Defensive Anchor", "Lob Threat",
                              "Playmaking Big", "Modern Unicorn", "Back To The Basket"])
             
+    st.markdown("---")
+    
+    st.write(similar_player)
+    
     st.markdown("---")
 
     st.markdown(
