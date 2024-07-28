@@ -2,9 +2,9 @@ import streamlit as st
 import random
 import numpy as np
 import os
-import string
 import pickle
 from datetime import datetime
+import base64
 from similar_player_dimensions import SimilarPlayerDimensions
 
 st.set_page_config(
@@ -43,24 +43,74 @@ position_dict = {"Forward": "F", "Center": "C", "Guard": "G", "Please submit eit
 def load_model(model):
     return pickle.load(open(model, 'rb'))
 
-# Show playstyles output
-def show_playstyles(position: str, players: list[str], styles: list[str]):
+def _show_sparks_gif(img_name: str) -> str:
     """
-    Loads playstyle text and images following the position classification.
+    Helper method to display gifs
+
+    Args:
+        img_name (str): Name of gif as labelled in img folder
+
+    Returns:
+        str: URL of gif
+    """
+    gif = open(os.path.join("img", f"{img_name}.gif"), "rb")
+    gif_content = gif.read()
+    gif_url = base64.b64encode(gif_content).decode("utf-8")
+    gif.close()
+    return gif_url
+
+def show_output(position: str, players: list[str], styles: list[str], similar_player_fname: str, similar_player_lname: str, similar_player_id: str):
+    """
+    Loads playstyle text, similar player and images following the position classification.
 
     Args:
         position (str): The classified position ("guard", "forward", "center")
         players (list[str]): A list of NBA players who represent a playstyle and whose images will be shown (e.g. "jalen-brunson")
         styles (list[str]): A list of playstyles that will be represented as text (e.g. "Stretch Big")
+        similar_player_fname (str):
+        similar_player_lname (str):
+        similar_player_id (str):
     """
-    # Load headers
+    # Load position classification
     st.image(os.path.join("img", f"{position}-classification.png"))
     st.divider()
+    
+    # Load most similar player
+    st.image(os.path.join("img", "your_nba_comparison.png"))
+    
+    # Open gifs
+    if position == "center":
+        gif_url_left = _show_sparks_gif("sparks_red_left")
+        gif_url_right = _show_sparks_gif("sparks_red_right")
+    elif position == "guard":
+        gif_url_left = _show_sparks_gif("sparks_blue_left")
+        gif_url_right = _show_sparks_gif("sparks_blue_right")
+    else:
+        gif_url_left = _show_sparks_gif("sparks_orange_left")
+        gif_url_right = _show_sparks_gif("sparks_orange_right")
+
+    # Display gifs
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown(
+            f'<img src="data:image/gif;base64,{gif_url_left}" alt="cat gif">',
+            unsafe_allow_html=True,
+        )
+    with col3:
+        st.markdown(
+            f'<img src="data:image/gif;base64,{gif_url_right}" alt="cat gif">',
+            unsafe_allow_html=True,
+        )
+    with col2:
+        st.markdown(f"<p style='text-align: center; color: black;'>{similar_player_fname}" + " " + f"{similar_player_lname}</p>", unsafe_allow_html=True)
+        st.image(f'player_headshots/{similar_player_id}.png')
+        
+    st.divider()
+
+    # Display playstyle text and associated player images
     st.image(os.path.join("img", "find-your-playstyle.png"))
     p1, p2, p3, p4, p5, p6 = players[0], players[1], players[2], players[3], players[4], players[5]
     s1, s2, s3, s4, s5, s6 = styles[0], styles[1], styles[2], styles[3], styles[4], styles[5]
-    
-    # Show playstyle text and associated player images
     col1, col2, col3 = st.columns(3)
     with col1:
         st.markdown(f"<p style='text-align: center; color: black;'>{s1}</p>", unsafe_allow_html=True)
@@ -123,6 +173,7 @@ def main():
                 # Obtain most similar player prediction and output
                 similar_player_model = load_model(os.path.join("models", "similar_player_dim.pkl"))
                 similar_player = similar_player_model.predict_similar_player(height, weight, (weight / (height/100)**2), predicted_pos)
+                similar_player_fname, similar_player_lname, similar_player_id = similar_player['fname'], similar_player['lname'], similar_player['playerid']
     
     # Define second container
     with col2:
@@ -157,29 +208,35 @@ def main():
     # If valid prediction, output playstyles
     else:
         if final_position == "Guard":
-            show_playstyles(position="guard",
+            show_output(position="guard",
                             players=["steph-curry", "jalen-brunson", "chris-paul",
                                       "demar-derozan", "alex-caruso", "jalen-brown"],
                             styles=["3 Point Playmaker", "Back to the basket", "Floor General",
-                             "Midrange Shot Creator", "Lockdown Defender", "2 Way Scorer"]
+                             "Midrange Shot Creator", "Lockdown Defender", "2 Way Scorer"],
+                            similar_player_fname=similar_player_fname,
+                            similar_player_lname=similar_player_lname,
+                            similar_player_id=similar_player_id,
                             )
         elif final_position == "Forward":
-            show_playstyles(position="forward",
+            show_output(position="forward",
                             players=["og-anunoby", "mikal-bridges", "lebron-james",
                                       "giannis-antetokounmpo", "kevin-durant", "kawhi-leonard"],
                             styles=["3&D Wing", "Slashing Playmaker", "Point Forward",
-                             "Interior Threat", "Unguardable Unicorn", "3 Level Scorer"])
+                             "Interior Threat", "Unguardable Unicorn", "3 Level Scorer"],
+                            similar_player_fname=similar_player_fname,
+                            similar_player_lname=similar_player_lname,
+                            similar_player_id=similar_player_id,)
         else:
-            show_playstyles(position="center",
+            show_output(position="center",
                             players=["kristaps-porzingis", "rudy-gobert", "dereck-lively",
                                       "nikola-jokic", "victor-wembanyama", "domantas-sabonis"],
                             styles=["Stretch Big", "Defensive Anchor", "Lob Threat",
-                             "Playmaking Big", "Modern Unicorn", "Back To The Basket"])
-    
-    # If valid prediction, output similar player
-    if predicted_pos != -1:
-        st.write(similar_player)
-
+                             "Playmaking Big", "Modern Unicorn", "Back To The Basket"],
+                            similar_player_fname=similar_player_fname,
+                            similar_player_lname=similar_player_lname,
+                            similar_player_id=similar_player_id,)
+        
+        
     st.markdown("---")
 
     st.markdown(
