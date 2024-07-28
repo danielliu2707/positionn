@@ -153,7 +153,7 @@ def main():
     
     # Capture case where there is no prediction from model
     if predicted_pos == -1:
-        st.warning("There was no prediction from the model as your dimensions/statistics were too abnormal")
+        st.warning("Please enter either physical dimensions or player statistics")
     # If valid prediction, output playstyles
     else:
         if final_position == "Guard":
@@ -175,11 +175,11 @@ def main():
                                       "nikola-jokic", "victor-wembanyama", "domantas-sabonis"],
                             styles=["Stretch Big", "Defensive Anchor", "Lob Threat",
                              "Playmaking Big", "Modern Unicorn", "Back To The Basket"])
-            
-    st.markdown("---")
     
-    st.write(similar_player)
-    
+    # If valid prediction, output similar player
+    if predicted_pos != -1:
+        st.write(similar_player)
+
     st.markdown("---")
 
     st.markdown(
