@@ -13,13 +13,29 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+# Cetner images when expanded
+st.markdown(
+    """
+    <style>
+        button[title^=Exit]+div [data-testid=stImage]{
+            text-align: center;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+            width: 100%;
+        }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 # Hide top multicolor header
 hide_decoration_bar_style = '''<style>header {visibility: hidden;}</style>'''
 st.markdown(hide_decoration_bar_style, unsafe_allow_html=True)
 
 # Define logo 
 st.image(os.path.join("img", "positionn-logo.png"))
-st.markdown("Determine what NBA position best suits a player based on their Physical Dimensions or Statistics.")
+st.markdown("Determine what NBA position best suits you based on your Physical Dimensions or Statistics & scroll down to find out which NBA player is most like you.")
 
 def get_position(predicted_pos: str, my_dict: dict):
     """
@@ -153,9 +169,9 @@ def main():
             current_year = datetime.now().year
             height = st.number_input("Enter height (m)", min_value=100.00, max_value=250.00, value=None, help="Enter a height between 100-250cm")
             weight = st.number_input("Enter weight (kg)", min_value=30.00, max_value=500.00, value=None, help="Enter a weight between 30-500kg")
-            year_start = st.number_input("Enter the year you started competitive basketball", min_value=1900, max_value=current_year,
+            year_start = st.number_input("Enter year you started competitive basketball", min_value=1900, max_value=current_year,
                                          step=1, value=None, help=f"Enter a starting year between: 1900-{current_year}")
-            year_end = st.number_input("Enter the year you stopped competitive basketball", min_value=year_start, max_value=current_year,
+            year_end = st.number_input("Enter year you last played competitive basketball", min_value=year_start, max_value=current_year,
                                        value=None, help=f"Enter a ending year between: {year_start}-{current_year}")
             
             # Predict outcome and obtain predicted position
@@ -170,6 +186,10 @@ def main():
                     # If model cannot output using input features, slightly adjust height to ensure valid prediction output
                     except ValueError:
                         height += 0.01
+                    # If user doesn't provide the necessary details
+                    except TypeError:
+                        st.warning("Please enter either physical dimensions or player statistics")
+                        quit()
                 # Obtain most similar player prediction and output
                 similar_player_model = load_model(os.path.join("models", "similar_player_dim.pkl"))
                 similar_player = similar_player_model.predict_similar_player(height, weight, (weight / (height/100)**2), predicted_pos)
@@ -235,7 +255,6 @@ def main():
                             similar_player_fname=similar_player_fname,
                             similar_player_lname=similar_player_lname,
                             similar_player_id=similar_player_id,)
-        
         
     st.markdown("---")
 
