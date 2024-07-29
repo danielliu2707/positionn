@@ -75,7 +75,8 @@ def _show_sparks_gif(img_name: str) -> str:
     gif.close()
     return gif_url
 
-def show_output(position: str, players: list[str], styles: list[str], similar_player_fname: str, similar_player_lname: str, similar_player_id: str):
+def show_output(position: str, players: list[str], styles: list[str], similar_player_fname: str,
+                similar_player_lname: str, similar_player_id: str, similar_player_height: str, similar_player_weight: str):
     """
     Loads playstyle text, similar player and images following the position classification.
 
@@ -86,6 +87,8 @@ def show_output(position: str, players: list[str], styles: list[str], similar_pl
         similar_player_fname (str):
         similar_player_lname (str):
         similar_player_id (str):
+        similar_player_height (str):
+        similar_player_weight (str):
     """
     # Load position classification
     st.image(os.path.join("img", f"{position}-classification.png"))
@@ -118,8 +121,12 @@ def show_output(position: str, players: list[str], styles: list[str], similar_pl
             unsafe_allow_html=True,
         )
     with col2:
-        st.markdown(f"<p style='text-align: center; color: black;'>{similar_player_fname}" + " " + f"{similar_player_lname}</p>", unsafe_allow_html=True)
+        similar_player_name = similar_player_fname + " " + similar_player_lname
+        st.markdown(f"<p style='text-align: center; color: black;'>{similar_player_name}</p>", unsafe_allow_html=True)
         st.image(f'player_headshots/{similar_player_id}.png')
+        st.write("  ")
+        st.write("  ")
+        st.markdown(f"<h3 style='text-align: center; color: black;'>{similar_player_name} is {similar_player_height}cm & {similar_player_weight}kg</h2>", unsafe_allow_html=True)
         
     st.divider()
 
@@ -194,6 +201,7 @@ def main():
                 similar_player_model = load_model(os.path.join("models", "similar_player_dim.pkl"))
                 similar_player = similar_player_model.predict_similar_player(height, weight, (weight / (height/100)**2), predicted_pos)
                 similar_player_fname, similar_player_lname, similar_player_id = similar_player['fname'], similar_player['lname'], similar_player['playerid']
+                similar_player_height, similar_player_weight = np.round(similar_player['height'], 2), np.round(similar_player['weight'], 2)
     
     # Define second container
     with col2:
@@ -236,6 +244,8 @@ def main():
                             similar_player_fname=similar_player_fname,
                             similar_player_lname=similar_player_lname,
                             similar_player_id=similar_player_id,
+                            similar_player_height=similar_player_height,
+                            similar_player_weight=similar_player_weight
                             )
         elif final_position == "Forward":
             show_output(position="forward",
@@ -245,7 +255,9 @@ def main():
                              "Interior Threat", "Unguardable Unicorn", "3 Level Scorer"],
                             similar_player_fname=similar_player_fname,
                             similar_player_lname=similar_player_lname,
-                            similar_player_id=similar_player_id,)
+                            similar_player_id=similar_player_id,
+                            similar_player_height=similar_player_height,
+                            similar_player_weight=similar_player_weight)
         else:
             show_output(position="center",
                             players=["kristaps-porzingis", "rudy-gobert", "dereck-lively",
@@ -254,7 +266,9 @@ def main():
                              "Playmaking Big", "Modern Unicorn", "Back To The Basket"],
                             similar_player_fname=similar_player_fname,
                             similar_player_lname=similar_player_lname,
-                            similar_player_id=similar_player_id,)
+                            similar_player_id=similar_player_id,
+                            similar_player_height=similar_player_height,
+                            similar_player_weight=similar_player_weight)
         
     st.markdown("---")
 
