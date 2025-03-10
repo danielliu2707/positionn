@@ -237,10 +237,10 @@ def main():
                         st.warning("Please enter all of the player statistics")
                         quit()
                 # Obtain most similar player prediction and output
-                # similar_player_model = load_model(os.path.join("models", "similar_player_dim.pkl"))
-                # similar_player = similar_player_model.predict_similar_player(height, weight, (weight / (height/100)**2), predicted_pos)
-                # similar_player_fname, similar_player_lname, similar_player_id = similar_player['fname'], similar_player['lname'], similar_player['playerid']
-                # similar_player_height, similar_player_weight = np.round(similar_player['height'], 2), np.round(similar_player['weight'], 2)
+                similar_player_model = load_model(os.path.join("models", "similar_player_stats.pkl"))
+                similar_player = similar_player_model.predict_similar_player(pts, ast, trb, stl, blk, predicted_pos)
+                similar_player_fname, similar_player_lname, similar_player_id = similar_player['fname'], similar_player['lname'], similar_player['playerid']
+                similar_player_height, similar_player_weight = np.round(similar_player['height'], 2), np.round(similar_player['weight'], 2)
 
     # Map index to position (Guard, Forward, Center)
     final_position = get_position(predicted_pos, position_dict)
