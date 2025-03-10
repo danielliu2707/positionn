@@ -1,5 +1,3 @@
-# positionn
-
 <h1 align="center">
   <br>
   <img src="https://github.com/danielliu2707/positionn/blob/main/img/positionn-logo.png">
