@@ -1,6 +1,7 @@
 import streamlit as st
 import random
 import numpy as np
+import pandas as pd
 import os
 import pickle
 from datetime import datetime
@@ -76,7 +77,7 @@ def _show_sparks_gif(img_name: str) -> str:
     return gif_url
 
 def show_output(position: str, players: list[str], styles: list[str], similar_player_fname: str,
-                similar_player_lname: str, similar_player_id: str, similar_player_height: str, similar_player_weight: str):
+                similar_player_lname: str, similar_player_id: str, classify_type: str, **kwargs):
     """
     Loads playstyle text, similar player and images following the position classification.
 
@@ -89,6 +90,9 @@ def show_output(position: str, players: list[str], styles: list[str], similar_pl
         similar_player_id (str):
         similar_player_height (str):
         similar_player_weight (str):
+        similar_player_pts (str):
+        
+        classify_type (str): Whether the user inputted dimensions or statistics
     """
     # Load position classification
     st.image(os.path.join("img", f"{position}-classification.png"))
@@ -120,14 +124,36 @@ def show_output(position: str, players: list[str], styles: list[str], similar_pl
             f'<img src="data:image/gif;base64,{gif_url_right}" alt="cat gif">',
             unsafe_allow_html=True,
         )
+    # Print similar player headshot and text (i.e. dimensions or statistics)
     with col2:
         similar_player_name = similar_player_fname + " " + similar_player_lname
         st.markdown(f"<p style='text-align: center; color: black;'>{similar_player_name}</p>", unsafe_allow_html=True)
         st.image(f'player_headshots/{similar_player_id}.png')
         st.write("  ")
         st.write("  ")
-        st.markdown(f"<h3 style='text-align: center; color: black;'>{similar_player_name} is {similar_player_height}cm & {similar_player_weight}kg</h2>", unsafe_allow_html=True)
-        
+        if classify_type == "dimensions":
+            stats_df = pd.DataFrame({
+                f"{similar_player_name}'s Dimensions": ["Height", "Weight"],
+                "Dimensions": [
+                    str(kwargs.get('similar_player_height')) + ' cm',
+                    str(kwargs.get('similar_player_weight')) + ' kg'
+                ]
+            })
+            st.table(stats_df.set_index(f"{similar_player_name}'s Dimensions"))
+
+        if classify_type == "statistics":
+            stats_df = pd.DataFrame({
+                f"{similar_player_name}'s Stats": ["Points", "Assists", "Rebounds", "Steals", "Blocks"],
+                "Averages": [
+                    str(kwargs.get('similar_player_pts')) + ' ppg',
+                    str(kwargs.get('similar_player_ast')) + ' apg',
+                    str(kwargs.get('similar_player_trb')) + ' rpg',
+                    str(kwargs.get('similar_player_stl')) + ' spg',
+                    str(kwargs.get('similar_player_blk')) + ' bpg'
+                ]
+            })
+            st.table(stats_df.set_index(f"{similar_player_name}'s Stats"))
+
     st.divider()
 
     # Display playstyle text and associated player images
@@ -202,6 +228,9 @@ def main():
                 similar_player = similar_player_model.predict_similar_player(height, weight, (weight / (height/100)**2), predicted_pos)
                 similar_player_fname, similar_player_lname, similar_player_id = similar_player['fname'], similar_player['lname'], similar_player['playerid']
                 similar_player_height, similar_player_weight = np.round(similar_player['height'], 2), np.round(similar_player['weight'], 2)
+                
+                # Identify the classification was based on a players dimensions
+                classify_type = "dimensions"
 
     # Define second container
     with col2:
@@ -218,8 +247,6 @@ def main():
                                          step=1, value=None, help=f"Enter a starting year between: 1950-{current_year}")
 
             # Predict outcome and obtain predicted position
-            
-            # NOTE: Up to this point.
             
             if st.button("Classify", key = "stats-classify", on_click = collapse_expander):
                 while (True):
@@ -240,7 +267,9 @@ def main():
                 similar_player_model = load_model(os.path.join("models", "similar_player_stats.pkl"))
                 similar_player = similar_player_model.predict_similar_player(pts, ast, trb, stl, blk, predicted_pos)
                 similar_player_fname, similar_player_lname, similar_player_id = similar_player['fname'], similar_player['lname'], similar_player['playerid']
-                similar_player_height, similar_player_weight = np.round(similar_player['height'], 2), np.round(similar_player['weight'], 2)
+                similar_player_pts, similar_player_ast, similar_player_trb, similar_player_stl, similar_player_blk = np.round(similar_player['pts'], 1), np.round(similar_player['ast'], 1), np.round(similar_player['trb'], 1), np.round(similar_player['stl'], 1) , np.round(similar_player['blk'], 1)
+                # Identify the classification was based on a players statistics
+                classify_type = "statistics"
 
     # Map index to position (Guard, Forward, Center)
     final_position = get_position(predicted_pos, position_dict)
@@ -251,7 +280,56 @@ def main():
     if predicted_pos == -1:
         st.warning("Please enter either physical dimensions or player statistics")
     # If valid prediction, output playstyles
-    else:
+    elif classify_type == "statistics":
+        if final_position == "Guard":
+            show_output(position="guard",
+                            players=["steph-curry", "jalen-brunson", "chris-paul",
+                                      "demar-derozan", "alex-caruso", "jalen-brown"],
+                            styles=["3 Point Playmaker", "Back to the basket", "Floor General",
+                             "Midrange Shot Creator", "Lockdown Defender", "2 Way Scorer"],
+                            similar_player_fname=similar_player_fname,
+                            similar_player_lname=similar_player_lname,
+                            similar_player_id=similar_player_id,
+                            similar_player_pts=similar_player_pts,
+                            similar_player_ast=similar_player_ast,
+                            similar_player_trb=similar_player_trb,
+                            similar_player_stl=similar_player_stl,
+                            similar_player_blk=similar_player_blk,
+                            classify_type=classify_type
+                            )
+        elif final_position == "Forward":
+            show_output(position="forward",
+                            players=["og-anunoby", "mikal-bridges", "lebron-james",
+                                      "giannis-antetokounmpo", "kevin-durant", "kawhi-leonard"],
+                            styles=["3&D Wing", "Slashing Playmaker", "Point Forward",
+                             "Interior Threat", "Unguardable Unicorn", "3 Level Scorer"],
+                            similar_player_fname=similar_player_fname,
+                            similar_player_lname=similar_player_lname,
+                            similar_player_id=similar_player_id,
+                            similar_player_pts=similar_player_pts,
+                            similar_player_ast=similar_player_ast,
+                            similar_player_trb=similar_player_trb,
+                            similar_player_stl=similar_player_stl,
+                            similar_player_blk=similar_player_blk,
+                            classify_type=classify_type
+                            )
+        else:
+            show_output(position="center",
+                            players=["kristaps-porzingis", "rudy-gobert", "dereck-lively",
+                                      "nikola-jokic", "victor-wembanyama", "domantas-sabonis"],
+                            styles=["Stretch Big", "Defensive Anchor", "Lob Threat",
+                             "Playmaking Big", "Modern Unicorn", "Back To The Basket"],
+                            similar_player_fname=similar_player_fname,
+                            similar_player_lname=similar_player_lname,
+                            similar_player_id=similar_player_id,
+                            similar_player_pts=similar_player_pts,
+                            similar_player_ast=similar_player_ast,
+                            similar_player_trb=similar_player_trb,
+                            similar_player_stl=similar_player_stl,
+                            similar_player_blk=similar_player_blk,
+                            classify_type=classify_type
+                            )
+    elif classify_type == "dimensions":
         if final_position == "Guard":
             show_output(position="guard",
                             players=["steph-curry", "jalen-brunson", "chris-paul",
@@ -262,7 +340,8 @@ def main():
                             similar_player_lname=similar_player_lname,
                             similar_player_id=similar_player_id,
                             similar_player_height=similar_player_height,
-                            similar_player_weight=similar_player_weight
+                            similar_player_weight=similar_player_weight,
+                            classify_type=classify_type
                             )
         elif final_position == "Forward":
             show_output(position="forward",
@@ -274,7 +353,9 @@ def main():
                             similar_player_lname=similar_player_lname,
                             similar_player_id=similar_player_id,
                             similar_player_height=similar_player_height,
-                            similar_player_weight=similar_player_weight)
+                            similar_player_weight=similar_player_weight,
+                            classify_type=classify_type
+                            )
         else:
             show_output(position="center",
                             players=["kristaps-porzingis", "rudy-gobert", "dereck-lively",
@@ -285,7 +366,10 @@ def main():
                             similar_player_lname=similar_player_lname,
                             similar_player_id=similar_player_id,
                             similar_player_height=similar_player_height,
-                            similar_player_weight=similar_player_weight)
+                            similar_player_weight=similar_player_weight,
+                            classify_type=classify_type
+                            )
+            
         
     st.markdown("---")
 
