@@ -251,7 +251,13 @@ def main():
             if st.button("Classify", key = "stats-classify", on_click = collapse_expander):
                 while (True):
                     try:
-                        stats_predictor = load_model(os.path.join("models", "stats_rf.sav"))
+                        # stats_predictor = load_model(os.path.join("models", "stats_rf.sav"))
+                        
+                        model_path = os.path.join("models", "stats_rf.sav")
+                        if not os.path.exists(model_path):
+                            st.error(f"Model file not found at {model_path}")
+                        else:
+                            stats_predictor = load_model(model_path)
                         stats_ohe_predictor = load_model(os.path.join("models", "stats_ohe.sav"))
                         input_features = (np.array([[pts, ast, trb, stl, blk, age, year]]))
                         predicted_pos = stats_ohe_predictor.inverse_transform(stats_predictor.predict(input_features))[0][0]   # obtain prediction using models
