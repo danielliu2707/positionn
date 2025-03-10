@@ -195,36 +195,53 @@ def main():
                         height += 0.01
                     # If user doesn't provide the necessary details
                     except TypeError:
-                        st.warning("Please enter either physical dimensions or player statistics")
+                        st.warning("Please enter all of the physical attributes")
                         quit()
                 # Obtain most similar player prediction and output
                 similar_player_model = load_model(os.path.join("models", "similar_player_dim.pkl"))
                 similar_player = similar_player_model.predict_similar_player(height, weight, (weight / (height/100)**2), predicted_pos)
                 similar_player_fname, similar_player_lname, similar_player_id = similar_player['fname'], similar_player['lname'], similar_player['playerid']
                 similar_player_height, similar_player_weight = np.round(similar_player['height'], 2), np.round(similar_player['weight'], 2)
-    
+
     # Define second container
     with col2:
         with st.expander("Player Statistics :trophy:", expanded=st.session_state['expander']):
-
-            ## Old:
+            # Request user input
             st.subheader("What are your player statistics?")
-            password = st.text_input("Enter Pass", "", key = "stats-input")
+            pts = st.number_input("Enter points/game", min_value=0.00, max_value=80.00, value=None, help="Enter points/game between 0-80")
+            ast = st.number_input("Enter assists/game", min_value=0.00, max_value=30.00, value=None, help="Enter assists/game between 0-30")
+            trb = st.number_input("Enter rebounds/game", min_value=0.00, max_value=40.00, value=None, help="Enter rebounds/game between 0-40")
+            stl = st.number_input("Enter steals/game", min_value=0.00, max_value=20.00, value=None, help="Enter steals/game between 0-20")
+            blk = st.number_input("Enter blocks/game", min_value=0.00, max_value=20.00, value=None, help="Enter blocks/game between 0-20")
+            age = st.number_input("Enter your age", min_value=0.00, max_value=100.00, value=None, help="Enter age between 0-100")
+            year = st.number_input("Enter year these statistics were recorded", min_value=1950, max_value=current_year,
+                                         step=1, value=None, help=f"Enter a starting year between: 1950-{current_year}")
+
+            # Predict outcome and obtain predicted position
             
-            model_list = ["LR", "NB"]
-            model_choice = st.selectbox("Select ML Model", model_list, key = "stats-model-choice")
+            # NOTE: Up to this point.
             
             if st.button("Classify", key = "stats-classify", on_click = collapse_expander):
-                # vect_password = pswd_cv.transform([password]).toarray()
-                if model_choice == "LR":
-                    prediction = 1
-                    # predictor = load_model("models/logit_pswd_model.pkl")
-                    # prediction = predictor.predict(vect_password)
-                else:
-                    prediction = 0
-                    # predictor = load_model("models/nv_pswd_model.pkl")
-                    # prediction = predictor.predict(vect_password)
-    
+                while (True):
+                    try:
+                        stats_predictor = load_model(os.path.join("models", "stats_rf.sav"))
+                        stats_ohe_predictor = load_model(os.path.join("models", "stats_ohe.sav"))
+                        input_features = (np.array([[pts, ast, trb, stl, blk, age, year]]))
+                        predicted_pos = stats_ohe_predictor.inverse_transform(stats_predictor.predict(input_features))[0][0]   # obtain prediction using models
+                        break 
+                    # If model cannot output using input features, slightly adjust height to ensure valid prediction output
+                    except ValueError:
+                        pts += 0.01
+                    # If user doesn't provide the necessary details
+                    except TypeError:
+                        st.warning("Please enter all of the player statistics")
+                        quit()
+                # Obtain most similar player prediction and output
+                # similar_player_model = load_model(os.path.join("models", "similar_player_dim.pkl"))
+                # similar_player = similar_player_model.predict_similar_player(height, weight, (weight / (height/100)**2), predicted_pos)
+                # similar_player_fname, similar_player_lname, similar_player_id = similar_player['fname'], similar_player['lname'], similar_player['playerid']
+                # similar_player_height, similar_player_weight = np.round(similar_player['height'], 2), np.round(similar_player['weight'], 2)
+
     # Map index to position (Guard, Forward, Center)
     final_position = get_position(predicted_pos, position_dict)
     
