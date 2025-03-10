@@ -5,14 +5,13 @@
 
 Positionn is an app that predicts your ideal basketball position and finds your NBA twin! 🏀
 
-Simply enter your physical attributes or stats, and with one click, discover your optimal position and the NBA player who matches you best. 🚀
+Simply enter your physical attributes or stats, and with one click, discover your optimal position and the NBA player who matches you best. 🚀  
 
 # Usage
+
 <br>
 
-### Try the web-based app:
-
-Try the app <a href="https://positionn.streamlit.app/">here</a> 👈
+Try the app <a href="https://positionn.streamlit.app/">here</a> 👈  
 
 ### For developers:
 
