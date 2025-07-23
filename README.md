@@ -55,12 +55,14 @@ $ streamlit run app.py
 
 The following limitations will be prioritised in future updates:
 
-**1. Lack of up-to-date data:** Implement API calls to the NBA API to fetch real-time player statistics and physical attributes from 2010–2025.
+**1. Lack of up-to-date data:** Implement API calls to the NBA API to fetch real-time player statistics and physical attributes from 2010–2025. Use this additional data to build improved models.
 
 **2. Lack of informative outputs:** Display two side-by-side tables: one showcasing the most similar season of a player and the other highlighting their current stats for better comparison.
 
-**3. Need to automate updating data:** Develop a system to automate monthly API calls, ensuring ML models are continuously updated with the latest NBA data.
+**3. Extend functionality of application With Computer Vision:** Develop a deep learning model (OpenCV, YOLO etc) that inputs a users full-body photo and predicts their physical dimensions to predict the player most similar to.
 
-**4. Extend functionality of application:** Develop a deep learning model (possible LLM using OpenAI) to predict users' NBA doppelganger.
+**4. Computer vision:** Allow users to upload a photo or video of themselves playing basketball, and use pose estimation models (e.g. OpenPose, MediaPipe) to analyse movement style and suggest an NBA twin using both stats and in-game movement.
 
-**5. Computer vision:** Allow users to upload a photo or viddeo of themselves playing basketball, and use pose estimation models (e.g. OpenPose, MediaPipe) to analyse movement style and suggest an NBA twin using both stats and in-game movement.
+**5. Dashboard:** After the application predicts the users position, produce a dashboard, with visualisations such as a histogram showing where they'd be distributed for height, weight etc... compared to the players in the dataset. (Seaborn?)
+
+**6. Need to automate updating data:** Develop a system to automate monthly API calls, ensuring ML models are continuously updated with the latest NBA data.
