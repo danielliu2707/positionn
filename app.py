@@ -10,7 +10,7 @@ import sklearn
 
 # Page config
 st.set_page_config(
-    page_title="PositionN",
+    page_title="Positionn",
     page_icon="🏀",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -160,13 +160,14 @@ position_dict = {"Forward": "F", "Center": "C", "Guard": "G", "Please submit eit
 # Sidebar
 with st.sidebar:
     st.image("img/positionn-logo.png", width=300)
-    st.markdown("## About")
-    st.markdown("""Ever thought, *'If I were just a few inches taller, I could've made the NBA?'*\n\nYou're not alone — and now, you can finally find out what position you'd play if the NBA were filled with average-height people like the rest of us 😭
+    st.markdown("\n")
+    st.markdown("""Ever thought, *'If I were just a few inches taller, I could've made the NBA?'*\n\nYou're not alone — and now, you can finally find out what position you'd play if the NBA were filled with average-height people 😭
+                \n Give the following a shot...
                 \n🏀 Physical Position Predictor: 
-                Discover which NBA position fits your height and weight — and which player your physique matches — by scaling your body to NBA standards from an everyday human baseline.
-
+                Discover your ideal NBA position and player match by scaling your physique to NBA standards from an everyday human baseline.
+                
                 \n\n📊 Stats Position Predictor:
-                Curious how your basketball stats compare to the pros? Find out which NBA position — and which player — your playstyle most closely matches..""")
+                Curious how your basketball stats compare to the pros? Find out which NBA position — and which player — your playstyle most closely matches.""")
     st.markdown("---")
     st.markdown("Made with ❤️ by Daniel Liu")
     st.markdown("[GitHub](https://github.com/danielliu2707/positionn) | [LinkedIn](https://www.linkedin.com/in/daniel-liu-80693a20b/)")
@@ -313,7 +314,7 @@ with tab2:
     
     with col1:
         height = st.number_input("Enter height (m)", min_value=100.00, max_value=250.00, value=None, help="Enter a height between 100-250cm")
-        weight = st.number_input("Enter weight (kg)", min_value=30.00, max_value=500.00, value=None, help="Enter a weight between 30-500kg")
+        weight = st.number_input("Enter weight (kg)", min_value=30.00, max_value=250.00, value=None, help="Enter a weight between 30-250kg")
     
     with col2:
         year_start = st.number_input("Enter year you started competitive basketball", min_value=1900, max_value=current_year,
