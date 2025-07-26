@@ -5,7 +5,6 @@ import pickle
 from PIL import Image
 from datetime import datetime
 import os
-import base64
 from similar_player_dimensions import SimilarPlayerDimensions
 import sklearn
 
@@ -37,7 +36,6 @@ def get_position(predicted_pos: str, my_dict: dict):
         if value == predicted_pos:
             return key
 
-@st.cache_data
 def load_model(model):
     """Load ML model with caching."""
     return pickle.load(open(model, 'rb'))
@@ -202,10 +200,20 @@ with tab1:
 
     if st.button("Predict Position from Stats"):
         try:
-            stats_predictor = load_model(os.path.join("models", "stats_rf.sav"))
-            stats_ohe_predictor = load_model(os.path.join("models", "stats_ohe.sav"))
+            # Load models
+            stats_predictor = load_model(os.path.join("models", "stats_model.sav"))
+            stats_le = load_model(os.path.join("models", "stats_encoder.sav"))
+
+            # Construct input features array
             input_features = (np.array([[pts, ast, trb, stl, blk, age, year]]))
-            predicted_pos = stats_ohe_predictor.inverse_transform(stats_predictor.predict(input_features))[0][0]
+            
+            # Predict position
+            predicted_pos = stats_le.inverse_transform(stats_predictor.predict(input_features))[0][0]
+
+            # Obtain probabilities for each position
+            predicted_proba = stats_predictor.predict_proba(input_features).flatten()
+            all_positions = stats_le.inverse_transform([0, 1, 2])
+            position_prob_dict = {pos: prob for pos, prob in zip(all_positions, predicted_proba)}
             
             # Add scroll indicator
             st.markdown(
@@ -255,7 +263,7 @@ with tab1:
                         ]
                     }),
                     position="Guard",
-                    position_prob=0.95
+                    position_prob=position_prob_dict['G']
                 )
             elif final_position == "Forward":
                 show_output(
@@ -273,7 +281,7 @@ with tab1:
                         ]
                     }),
                     position="Forward",
-                    position_prob=0.90
+                    position_prob=position_prob_dict['F']
                 )
             else:
                 show_output(
@@ -291,7 +299,7 @@ with tab1:
                         ]
                     }),
                     position="Center",
-                    position_prob=0.85
+                    position_prob=position_prob_dict['C']
                 )
         except TypeError:
             st.warning("Please enter all of the player statistics")
@@ -315,11 +323,22 @@ with tab2:
     
     if st.button("Predict Position from Dimensions"):
         try:
-            physical_predictor = load_model(os.path.join("models", "dimensions_rf.sav"))
-            ohe_predictor = load_model(os.path.join("models", "ohe.sav"))
+            # Load models
+            dimensions_predictor = load_model(os.path.join("models", "dimensions_model.sav"))
+            dimensions_le = load_model(os.path.join("models", "dimensions_encoder.sav"))
+
+            # Construct input features array
             input_features = (np.array([[height, weight, year_start, year_end, (weight / (height/100)**2)]]))
-            predicted_pos = ohe_predictor.inverse_transform(physical_predictor.predict(input_features))[0][0]
             
+            # Predict position
+            dimensions_predictor.predict(input_features)
+            predicted_pos = dimensions_le.inverse_transform(dimensions_predictor.predict(input_features))[0][0]
+
+            # Obtain probabilities for each position
+            predicted_proba = dimensions_predictor.predict_proba(input_features).flatten()
+            all_positions = dimensions_le.inverse_transform([0, 1, 2])
+            position_prob_dict = {pos: prob for pos, prob in zip(all_positions, predicted_proba)}
+
             # Add scroll indicator
             st.markdown(
                 """
@@ -362,7 +381,7 @@ with tab2:
                         ]
                     }),
                     position="Guard",
-                    position_prob=0.95
+                    position_prob=position_prob_dict['G']
                 )
             elif final_position == "Forward":
                 show_output(
@@ -377,7 +396,7 @@ with tab2:
                         ]
                     }),
                     position="Forward",
-                    position_prob=0.90
+                    position_prob=position_prob_dict['F']
                 )
             else:
                 show_output(
@@ -392,7 +411,7 @@ with tab2:
                         ]
                     }),
                     position="Center",
-                    position_prob=0.85
+                    position_prob=position_prob_dict['C']
                 )
         except TypeError:
             st.warning("Please enter all of the physical dimensions")

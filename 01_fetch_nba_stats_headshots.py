@@ -2,13 +2,13 @@ import pandas as pd
 import numpy as np
 from nba_api.stats.static import players
 from nba_api.stats.endpoints import playercareerstats, commonplayerinfo
+from nba_api.stats.library.http import NBAStatsHTTP
 import time
 from datetime import datetime
 import os
 import requests
 from requests.exceptions import Timeout, ConnectionError
 import random
-from nba_api.stats.library.http import NBAStatsHTTP
 
 # Configure NBA API settings
 NBAStatsHTTP.TIMEOUT = 60  # Increase global timeout to 60 seconds
