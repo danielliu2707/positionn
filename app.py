@@ -42,14 +42,6 @@ def load_model(model):
     """Load ML model with caching."""
     return pickle.load(open(model, 'rb'))
 
-def _show_sparks_gif(img_name: str) -> str:
-    """Helper method to display gifs."""
-    gif = open(os.path.join("img", f"{img_name}.gif"), "rb")
-    gif_content = gif.read()
-    gif_url = base64.b64encode(gif_content).decode("utf-8")
-    gif.close()
-    return gif_url
-
 def show_output(similar_player_id, similar_player_fname, similar_player_lname, stats_df, position, position_prob):
     """Loads playstyle text, similar player and images following the position classification."""
     
