@@ -1,6 +1,7 @@
 name: Ping Streamlit App
 
 on:
+  workflow_dispatch:   # allows manual runs
   schedule:
     - cron: '0 0 * * *'   # Midnight UTC
     - cron: '0 8 * * *'   # 8 AM UTC
