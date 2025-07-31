@@ -45,11 +45,11 @@ class SimilarPlayerStats:
         return most_similar_player
 
 # Example usage
-active_player_stats = pd.read_csv(os.path.join("data", "api_player_stats.csv"))
-similar_player = SimilarPlayerStats(active_player_stats)
-# Example inputs - excluding advanced stats
-pts, ast, reb, stl, blk, tov = 30, 10, 5, 1, 1, 5
-print(similar_player.predict_similar_player(pts, ast, reb, stl, blk, tov, 'G'))
+# active_player_stats = pd.read_csv(os.path.join("data", "api_player_stats.csv"))
+# similar_player = SimilarPlayerStats(active_player_stats)
+# # Example inputs - excluding advanced stats
+# pts, ast, reb, stl, blk, tov = 30, 10, 5, 1, 1, 5
+# print(similar_player.predict_similar_player(pts, ast, reb, stl, blk, tov, 'G'))
 
 # Export model
-pickle.dump(similar_player, open(os.path.join("models", "similar_player_stats.pkl"), "wb"))
+# pickle.dump(similar_player, open(os.path.join("models", "similar_player_stats.pkl"), "wb"))
