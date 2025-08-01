@@ -105,14 +105,15 @@ def convert_season_to_year(season_id):
     start_year = int(season_id.split('-')[0])
     return start_year + 1
 
-def process_player_stats(stats_df, player_name, player_position):
+def process_player_stats(stats_df, player_name, player_position, player_id):
     """Process player statistics to match your required format"""
     # Create a copy to avoid SettingWithCopyWarning
     df = stats_df.copy()
     
-    # Add player name and position
+    # Add player name, position and ID
     df['player'] = player_name
     df['pos'] = player_position
+    df['player_id'] = player_id
     
     # Convert numeric columns to float
     numeric_cols = ['PTS', 'AST', 'REB', 'STL', 'BLK', 'TOV', 'GP']
@@ -143,6 +144,7 @@ def process_player_stats(stats_df, player_name, player_position):
     # Select and reorder final columns
     result = df[[
         'player',
+        'player_id',
         'pos',
         'PTS',
         'AST',
@@ -184,7 +186,8 @@ def process_single_player(player):
         processed_stats = process_player_stats(
             stats,
             player['full_name'],
-            position
+            position,
+            player['id']
         )
         
         print(f"Successfully processed {player['full_name']}")

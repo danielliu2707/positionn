@@ -242,8 +242,7 @@ with tab1:
             similar_player_model = load_model(os.path.join("models", "similar_player_stats.pkl"))
             similar_player = similar_player_model.predict_similar_player(pts, ast, trb, stl, blk, tov, predicted_pos)
             similar_player_name = similar_player['player']
-            #similar_player_id = similar_player['playerid']
-            similar_player_id = '1'
+            similar_player_id = similar_player['player_id']
             similar_player_pts = np.round(similar_player['PTS'], 1)
             similar_player_ast = np.round(similar_player['AST'], 1)
             similar_player_trb = np.round(similar_player['REB'], 1)
