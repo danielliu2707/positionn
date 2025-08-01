@@ -5,8 +5,8 @@ import pickle
 from PIL import Image
 from datetime import datetime
 import os
-from similar_player_dimensions import SimilarPlayerDimensions
 import sklearn
+from similar_player_stats import SimilarPlayerStats
 
 # Page config
 st.set_page_config(
@@ -40,7 +40,7 @@ def load_model(model):
     """Load ML model with caching."""
     return pickle.load(open(model, 'rb'))
 
-def show_output(similar_player_id, similar_player_fname, similar_player_lname, stats_df, position, position_prob):
+def show_output(similar_player_id, similar_player_name, stats_df, position, position_prob):
     """Loads playstyle text, similar player and images following the position classification."""
     
     # Title with emoji
@@ -84,7 +84,7 @@ def show_output(similar_player_id, similar_player_fname, similar_player_lname, s
 
     st.markdown(f"""
         <div class="player-container">
-            <div class="player-name">{similar_player_fname} {similar_player_lname}</div>
+            <div class="player-name">{similar_player_year} {similar_player_name}</div>
         </div>
     """, unsafe_allow_html=True)
 
@@ -98,8 +98,10 @@ def show_output(similar_player_id, similar_player_fname, similar_player_lname, s
 
     # Breakdown section header - different for dimensions vs statistics
     if 'Dimensions' in stats_df.columns:
+        similar_player_fname = similar_player_name.split(' ')[0]
         st.subheader(f"{similar_player_fname}'s Physical Profile")
     else:
+        similar_player_fname = similar_player_name.split(' ')[0]
         st.subheader(f"{similar_player_fname}'s Statistical Breakdown")
     
     # Create clean stats table based on whether it's dimensions or statistics
@@ -115,13 +117,14 @@ def show_output(similar_player_id, similar_player_fname, similar_player_lname, s
     else:
         # For statistics case
         clean_stats = pd.DataFrame({
-            'Statistic': ['Points', 'Assists', 'Rebounds', 'Steals', 'Blocks'],
+            'Statistic': ['Points', 'Assists', 'Rebounds', 'Steals', 'Blocks', 'Turnovers'],
             'Per Game': [
                 f"{stats_df['Averages'][0].split(' ')[0]} ppg",
                 f"{stats_df['Averages'][1].split(' ')[0]} apg",
                 f"{stats_df['Averages'][2].split(' ')[0]} rpg",
                 f"{stats_df['Averages'][3].split(' ')[0]} spg",
-                f"{stats_df['Averages'][4].split(' ')[0]} bpg"
+                f"{stats_df['Averages'][4].split(' ')[0]} bpg",
+                f"{stats_df['Averages'][5].split(' ')[0]} tpg"
             ]
         })
 
@@ -140,7 +143,7 @@ def show_output(similar_player_id, similar_player_fname, similar_player_lname, s
     if 'Dimensions' in stats_df.columns:
         st.markdown(f"""
             <div style='text-align: center; font-style: italic; color: #666; padding: 15px;'>
-                Your physical measurements align closely with {similar_player_fname} {similar_player_lname}'s profile. 
+                Your physical measurements align closely with {similar_player_name}'s profile. 
                 Players with similar builds often excel as {position.lower()}s in the NBA, utilizing their 
                 physical attributes to impact the game.
             </div>
@@ -148,7 +151,7 @@ def show_output(similar_player_id, similar_player_fname, similar_player_lname, s
     else:
         st.markdown(f"""
             <div style='text-align: center; font-style: italic; color: #666; padding: 15px;'>
-                Your playing style closely mirrors that of {similar_player_fname} {similar_player_lname}. 
+                Your playing style closely mirrors that of {similar_player_name}. 
                 Like them, you project as a {position.lower()} in the NBA, showing similar statistical patterns
                 across key performance metrics.
             </div>
@@ -195,9 +198,7 @@ with tab1:
     
     with col3:
         blk = st.number_input("Enter blocks/game", min_value=0.00, max_value=20.00, value=None, help="Enter blocks/game between 0-20")
-        age = st.number_input("Enter your age", min_value=0.00, max_value=100.00, value=None, help="Enter age between 0-100")
-        year = st.number_input("Enter year these statistics were recorded", min_value=1950, max_value=current_year,
-                             step=1, value=None, help=f"Enter a starting year between: 1950-{current_year}")
+        tov = st.number_input("Enter turnovers/game", min_value=0.00, max_value=30.00, value=None, help="Enter turnovers/game between 0-30")
 
     if st.button("Predict Position from Stats"):
         try:
@@ -205,8 +206,12 @@ with tab1:
             stats_predictor = load_model(os.path.join("models", "stats_model.sav"))
             stats_le = load_model(os.path.join("models", "stats_encoder.sav"))
 
-            # Construct input features array
-            input_features = (np.array([[pts, ast, trb, stl, blk, age, year]]))
+            # Compute advanced stats
+            ast_to, stocks, fic = round(ast/tov, 2), round(stl+blk, 2), round(pts+trb+ast+stl+blk-tov, 2)
+            
+            # Construct input features df with ALL columns including derived stats
+            input_features = pd.DataFrame([[pts, ast, trb, stl, blk, tov, ast_to, stocks, fic]], 
+                            columns=['PTS', 'AST', 'REB', 'STL', 'BLK', 'TOV', 'AST_TO', 'STOCKS', 'FIC'])
             
             # Predict position
             predicted_pos = stats_le.inverse_transform(stats_predictor.predict(input_features))[0][0]
@@ -235,15 +240,16 @@ with tab1:
             
             # Get similar player prediction
             similar_player_model = load_model(os.path.join("models", "similar_player_stats.pkl"))
-            similar_player = similar_player_model.predict_similar_player(pts, ast, trb, stl, blk, predicted_pos)
-            similar_player_fname = similar_player['fname']
-            similar_player_lname = similar_player['lname']
-            similar_player_id = similar_player['playerid']
-            similar_player_pts = np.round(similar_player['pts'], 1)
-            similar_player_ast = np.round(similar_player['ast'], 1)
-            similar_player_trb = np.round(similar_player['trb'], 1)
-            similar_player_stl = np.round(similar_player['stl'], 1)
-            similar_player_blk = np.round(similar_player['blk'], 1)
+            similar_player = similar_player_model.predict_similar_player(pts, ast, trb, stl, blk, tov, predicted_pos)
+            similar_player_name = similar_player['player']
+            similar_player_id = similar_player['player_id']
+            similar_player_pts = np.round(similar_player['PTS'], 1)
+            similar_player_ast = np.round(similar_player['AST'], 1)
+            similar_player_trb = np.round(similar_player['REB'], 1)
+            similar_player_stl = np.round(similar_player['STL'], 1)
+            similar_player_blk = np.round(similar_player['BLK'], 1)
+            similar_player_tov = np.round(similar_player['TOV'], 1)
+            similar_player_year = np.round(similar_player['year'], 1)
             
             # Get final position and show output
             final_position = get_position(predicted_pos, position_dict)
@@ -251,16 +257,16 @@ with tab1:
             if final_position == "Guard":
                 show_output(
                     similar_player_id=similar_player_id,
-                    similar_player_fname=similar_player_fname,
-                    similar_player_lname=similar_player_lname,
+                    similar_player_name=similar_player_name,
                     stats_df=pd.DataFrame({
-                        f"{similar_player_fname} {similar_player_lname}'s Stats": ["Points", "Assists", "Rebounds", "Steals", "Blocks"],
+                        f"{similar_player_name}'s Stats": ["Points", "Assists", "Rebounds", "Steals", "Blocks", "Turnovers"],
                         "Averages": [
                             str(similar_player_pts) + ' ppg',
                             str(similar_player_ast) + ' apg',
                             str(similar_player_trb) + ' rpg',
                             str(similar_player_stl) + ' spg',
-                            str(similar_player_blk) + ' bpg'
+                            str(similar_player_blk) + ' bpg',
+                            str(similar_player_tov) + ' tpg'
                         ]
                     }),
                     position="Guard",
@@ -269,16 +275,16 @@ with tab1:
             elif final_position == "Forward":
                 show_output(
                     similar_player_id=similar_player_id,
-                    similar_player_fname=similar_player_fname,
-                    similar_player_lname=similar_player_lname,
+                    similar_player_name=similar_player_name,
                     stats_df=pd.DataFrame({
-                        f"{similar_player_fname} {similar_player_lname}'s Stats": ["Points", "Assists", "Rebounds", "Steals", "Blocks"],
+                        f"{similar_player_name}'s Stats": ["Points", "Assists", "Rebounds", "Steals", "Blocks", "Turnovers"],
                         "Averages": [
                             str(similar_player_pts) + ' ppg',
                             str(similar_player_ast) + ' apg',
                             str(similar_player_trb) + ' rpg',
                             str(similar_player_stl) + ' spg',
-                            str(similar_player_blk) + ' bpg'
+                            str(similar_player_blk) + ' bpg',
+                            str(similar_player_tov) + ' tpg'
                         ]
                     }),
                     position="Forward",
@@ -287,16 +293,16 @@ with tab1:
             else:
                 show_output(
                     similar_player_id=similar_player_id,
-                    similar_player_fname=similar_player_fname,
-                    similar_player_lname=similar_player_lname,
+                    similar_player_name=similar_player_name,
                     stats_df=pd.DataFrame({
-                        f"{similar_player_fname} {similar_player_lname}'s Stats": ["Points", "Assists", "Rebounds", "Steals", "Blocks"],
+                        f"{similar_player_name}'s Stats": ["Points", "Assists", "Rebounds", "Steals", "Blocks", "Turnovers"],
                         "Averages": [
                             str(similar_player_pts) + ' ppg',
                             str(similar_player_ast) + ' apg',
                             str(similar_player_trb) + ' rpg',
                             str(similar_player_stl) + ' spg',
-                            str(similar_player_blk) + ' bpg'
+                            str(similar_player_blk) + ' bpg',
+                            str(similar_player_tov) + ' tpg'
                         ]
                     }),
                     position="Center",

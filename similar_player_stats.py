@@ -1,40 +1,33 @@
 import pandas as pd
 import numpy as np
 import os
+import pickle
 
 class SimilarPlayerStats:
     """
     Class used to predict the most similar player given statistics
     """
-    def __init__(self, active_players: pd.DataFrame):
-        self.active_players = active_players
+    def __init__(self, active_player_stats: pd.DataFrame):
+        self.active_player_stats = active_player_stats
     
-    def predict_similar_player(self, user_pts: int, user_ast: int, user_trb: int, user_stl: int, user_blk: int,
-                               user_pos_prediction: str) -> pd.Series:
+    def predict_similar_player(self, user_pts: int, user_ast: int, user_trb: int, user_stl: int, user_blk: int, user_tov: int,
+                               user_pos_prediction: str) -> pd.Series: 
         """
-        This function determines the most similar NBA player in 2023 to the statistics provided
+        This function determines the most similar active NBA player to the statistics provided
         by the user as input. It goes about this by firstly, filtering for active NBA players with the predicted
         position (G, F, C). Then, compute the cosine similiarty between those filtered active NBA players and the user
         input attributes. Finally, keep only the active NBA player with the greatest cosine similiarity score to have
         their name and image outputted in the application.
 
-        Args:
-            user_pts (int): _description_
-            user_ast (int): _description_
-            user_trb (int): _description_
-            user_stl (int): _description_
-            user_blk (int): _description_
-            user_pos_prediction (str): _description_
-
         Returns:
             pd.Series: A pandas series containing relevant information about the most similar active NBA player.
         """
         # Filter for predicted position:
-        active_pos_players = self.active_players[self.active_players['position'] == user_pos_prediction]
+        active_pos_players = self.active_player_stats[self.active_player_stats['pos'] == user_pos_prediction]
         
         # Obtain only relevant attributes for comparison
-        active_pos_players_num = active_pos_players[['pts', 'ast', 'trb', 'stl', 'blk']]
-        user_features = np.array([user_pts, user_ast, user_trb, user_stl, user_blk]).reshape(1, 5)
+        active_pos_players_num = active_pos_players[['PTS','AST','REB','STL','BLK','TOV']]
+        user_features = np.array([user_pts, user_ast, user_trb, user_stl, user_blk, user_tov]).reshape(1, 6)
         
         # Scale data
         from sklearn.preprocessing import StandardScaler
@@ -51,6 +44,12 @@ class SimilarPlayerStats:
         most_similar_player = active_pos_players[active_pos_players['cosine_similarity'] == np.max(np.squeeze(cosine_res))].iloc[0, :]
         return most_similar_player
 
-active_player_statistics = pd.read_csv(os.path.join("data", "active_player_stats.csv"))
-similar_player = SimilarPlayerStats(active_player_statistics)
-print(similar_player.predict_similar_player(20, 10, 5, 1, 1, 'G'))
+# Example usage
+# active_player_stats = pd.read_csv(os.path.join("data", "api_player_stats.csv"))
+# similar_player = SimilarPlayerStats(active_player_stats)
+# # Example inputs - excluding advanced stats
+# pts, ast, reb, stl, blk, tov = 30, 10, 5, 1, 1, 5
+# print(similar_player.predict_similar_player(pts, ast, reb, stl, blk, tov, 'G'))
+
+# Export model
+# pickle.dump(similar_player, open(os.path.join("models", "similar_player_stats.pkl"), "wb"))

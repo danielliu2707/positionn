@@ -9,6 +9,7 @@ import os
 import requests
 from requests.exceptions import Timeout, ConnectionError
 import random
+from multiprocessing import Pool, cpu_count
 
 # Configure NBA API settings
 NBAStatsHTTP.TIMEOUT = 60  # Increase global timeout to 60 seconds
@@ -104,17 +105,18 @@ def convert_season_to_year(season_id):
     start_year = int(season_id.split('-')[0])
     return start_year + 1
 
-def process_player_stats(stats_df, player_name, player_position):
+def process_player_stats(stats_df, player_name, player_position, player_id):
     """Process player statistics to match your required format"""
     # Create a copy to avoid SettingWithCopyWarning
     df = stats_df.copy()
     
-    # Add player name and position
+    # Add player name, position and ID
     df['player'] = player_name
     df['pos'] = player_position
+    df['player_id'] = player_id
     
     # Convert numeric columns to float
-    numeric_cols = ['PTS', 'AST', 'REB', 'STL', 'BLK', 'GP']
+    numeric_cols = ['PTS', 'AST', 'REB', 'STL', 'BLK', 'TOV', 'GP']
     for col in numeric_cols:
         df[col] = pd.to_numeric(df[col], errors='coerce')
     
@@ -124,6 +126,13 @@ def process_player_stats(stats_df, player_name, player_position):
     df['REB'] = (df['REB'] / df['GP']).round(2)
     df['STL'] = (df['STL'] / df['GP']).round(2)
     df['BLK'] = (df['BLK'] / df['GP']).round(2)
+    df['TOV'] = (df['TOV'] / df['GP']).round(2)
+    
+    # Calculate advanced metrics
+    df['AST_TO'] = df['AST'] / df['TOV']  # AST/TO ratio
+    
+    df['STOCKS'] = (df['STL'] + df['BLK']).round(2)  # Steals + Blocks
+    df['FIC'] = (df['PTS'] + df['REB'] + df['AST'] + df['STL'] + df['BLK'] - df['TOV']).round(2)  # Floor Impact Counter
     
     # Convert season ID to full year
     df['year'] = df['SEASON_ID'].apply(convert_season_to_year)
@@ -135,12 +144,17 @@ def process_player_stats(stats_df, player_name, player_position):
     # Select and reorder final columns
     result = df[[
         'player',
+        'player_id',
         'pos',
         'PTS',
         'AST',
         'REB',
         'STL',
         'BLK',
+        'TOV',
+        'AST_TO',
+        'STOCKS',
+        'FIC',
         'age',
         'year'
     ]].copy()
@@ -150,49 +164,62 @@ def process_player_stats(stats_df, player_name, player_position):
     
     return result
 
-def process_player_batch(players_batch, batch_num):
-    """Process a batch of players and save to a separate file"""
-    all_stats = []
-    
-    for i, player in enumerate(players_batch, 1):
-        print(f"Batch {batch_num} - Player {i}/{len(players_batch)}: {player['full_name']}")
+def process_single_player(player):
+    """Process a single player's stats"""
+    print(f"Processing player: {player['full_name']}")
+    try:
+        # Download player headshot
+        download_player_headshot(player['id'], player['full_name'])
         
-        try:
-            # Download player headshot
-            download_player_headshot(player['id'], player['full_name'])
-            
-            # Get player position from detailed info
-            position = get_player_info(player['id'])
-            if position is None:
-                print(f"Skipping {player['full_name']} due to API errors")
-                continue
-            
-            # Get career stats
-            stats = get_player_stats(player['id'])
-            if stats is None:
-                print(f"Skipping {player['full_name']} due to API errors")
-                continue
-            
-            processed_stats = process_player_stats(
-                stats,
-                player['full_name'],
-                position
-            )
-            all_stats.append(processed_stats)
-            
-        except Exception as e:
-            print(f"Error processing player {player['full_name']}: {str(e)}")
-            continue
+        # Get player position from detailed info
+        position = get_player_info(player['id'])
+        if position is None:
+            print(f"Skipping {player['full_name']} due to API errors")
+            return None
+        
+        # Get career stats
+        stats = get_player_stats(player['id'])
+        if stats is None:
+            print(f"Skipping {player['full_name']} due to API errors")
+            return None
+        
+        processed_stats = process_player_stats(
+            stats,
+            player['full_name'],
+            position,
+            player['id']
+        )
+        
+        print(f"Successfully processed {player['full_name']}")
+        return processed_stats
+        
+    except Exception as e:
+        print(f"Error processing player {player['full_name']}: {str(e)}")
+        return None
+
+def process_player_batch(players_batch, batch_num):
+    """Process a batch of players in parallel and save to a separate file"""
+    # Determine number of processes (use 75% of available CPU cores)
+    num_processes = max(1, int(cpu_count() * 0.75))
+    print(f"Using {num_processes} processes for parallel processing")
+    
+    # Create a pool of workers
+    with Pool(processes=num_processes) as pool:
+        # Process players in parallel
+        results = pool.map(process_single_player, players_batch)
+        
+        # Filter out None results (failed processing)
+        all_stats = [r for r in results if r is not None]
     
     # Save batch to CSV if we have data
     if all_stats:
         final_df = pd.concat(all_stats, ignore_index=True)
         timestamp = datetime.now().strftime('%Y%m%d')
-        output_file = f'data/nba_player_stats_{timestamp}_batch{batch_num}.csv'
+        output_file = f'data/nba_current_player_stats_{timestamp}_batch{batch_num}.csv'
         final_df.to_csv(output_file, index=False)
         print(f"\nBatch {batch_num} saved to {output_file}")
         print(f"Batch {batch_num} Summary:")
-        print(f"Players processed: {len(players_batch)}")
+        print(f"Players processed: {len(all_stats)} out of {len(players_batch)}")
         print(f"Total rows: {len(final_df)}")
         print(f"Year range: {final_df['year'].min()} - {final_df['year'].max()}\n")
 
@@ -203,14 +230,16 @@ def main():
     total_players = len(active_players)
     print(f"Found {total_players} active players")
     
-    # Process only batch  (players 201-400)
+    # Process all players in batches
     batch_size = 200
-    batch_num = 3
-    start_idx = (batch_num - 1) * batch_size
-    end_idx = start_idx + batch_size
-    batch = active_players[start_idx:end_idx]
-    print(f"\nProcessing batch {batch_num} ({len(batch)} players)")
-    process_player_batch(batch, batch_num)
+    total_batches = (total_players + batch_size - 1) // batch_size
+    
+    for batch_num in range(1, total_batches + 1):
+        start_idx = (batch_num - 1) * batch_size
+        end_idx = min(start_idx + batch_size, total_players)
+        batch = active_players[start_idx:end_idx]
+        print(f"\nProcessing batch {batch_num} of {total_batches} ({len(batch)} players)")
+        process_player_batch(batch, batch_num)
 
 if __name__ == "__main__":
     main() 
