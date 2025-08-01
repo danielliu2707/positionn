@@ -176,7 +176,7 @@ with st.sidebar:
     st.markdown("[GitHub](https://github.com/danielliu2707/positionn) | [LinkedIn](https://www.linkedin.com/in/daniel-liu-80693a20b/)")
 
 # Main content
-st.title("Positionn: NBA Position Predictor")
+st.title("NBA Position Predictor")
 
 # Create tabs
 tab1, tab2 = st.tabs(["Player Statistics", "Player Dimensions"])
@@ -239,8 +239,8 @@ with tab1:
             )
             
             # Get similar player prediction
-            similar_player_model = load_model(os.path.join("models", "similar_player_stats.pkl"))
-            similar_player = similar_player_model.predict_similar_player(pts, ast, trb, stl, blk, tov, predicted_pos)
+            similar_player_model = load_model(os.path.join("models", "similar_player_stat.pkl"))
+            similar_player = similar_player_model.predict_similar_player(pts, ast, trb, stl, blk, tov, predicted_pos, feature_weights=[3.0, 1.0, 1.0, 0.5, 0.5, 0.5])
             similar_player_name = similar_player['player']
             similar_player_id = similar_player['player_id']
             similar_player_pts = np.round(similar_player['PTS'], 1)
@@ -308,6 +308,8 @@ with tab1:
                     position="Center",
                     position_prob=position_prob_dict['C']
                 )
+        except ValueError:
+            st.warning("Please enter all of the player statistics")
         except TypeError:
             st.warning("Please enter all of the player statistics")
 
