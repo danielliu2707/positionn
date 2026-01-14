@@ -1,0 +1,13 @@
+# Deta Space configuration file
+v: 0
+micros:
+  - name: positionn-api
+    src: .
+    engine: python3.10
+    run: uvicorn api:app --host 0.0.0.0 --port $PORT
+    include:
+      - api.py
+      - similar_player_stats.py
+      - similar_player_dimensions.py
+      - models/
+      - requirements.txt
