@@ -11,13 +11,12 @@ class SimilarPlayerStats:
         self.active_player_stats = active_player_stats
     
     def predict_similar_player(self, user_pts: int, user_ast: int, user_trb: int, user_stl: int, user_blk: int, user_tov: int,
-                               user_pos_prediction: str, feature_weights: list = None) -> pd.Series: 
+                               user_pos_prediction: str, feature_weights: list = None, top_n: int = 10) -> pd.DataFrame: 
         """
-        This function determines the most similar active NBA player to the statistics provided
+        This function determines the most similar active NBA players to the statistics provided
         by the user as input. It goes about this by firstly, filtering for active NBA players with the predicted
-        position (G, F, C). Then, compute the cosine similiarty between those filtered active NBA players and the user
-        input attributes. Finally, keep only the active NBA player with the greatest cosine similiarity score to have
-        their name and image outputted in the application.
+        position (G, F, C). Then, compute the euclidean distance between those filtered active NBA players and the user
+        input attributes. Finally, return the top N most similar players ranked by similarity score.
 
         Args:
             user_pts: Points per game
@@ -28,9 +27,10 @@ class SimilarPlayerStats:
             user_tov: Turnovers per game
             user_pos_prediction: Predicted position (G, F, C)
             feature_weights: List of weights for [PTS, AST, REB, STL, BLK, TOV]. Defaults to equal weights if None.
+            top_n: Number of top similar players to return (default: 10)
 
         Returns:
-            pd.Series: A pandas series containing relevant information about the most similar active NBA player.
+            pd.DataFrame: A pandas DataFrame containing the top N most similar players, sorted by similarity_score (descending).
         """
         # Filter for predicted position:
         active_pos_players = self.active_player_stats[self.active_player_stats['pos'] == user_pos_prediction]
@@ -64,11 +64,24 @@ class SimilarPlayerStats:
         
         # Convert distance to similarity score (inverse of distance)
         similarity_scores = 1 / (1 + distances)  # Adding 1 to avoid division by zero
+        active_pos_players = active_pos_players.copy()  # Avoid SettingWithCopyWarning
         active_pos_players['similarity_score'] = np.squeeze(similarity_scores)
         
-        # Find most similar player
-        most_similar_player = active_pos_players.loc[active_pos_players['similarity_score'].idxmax()]
-        return most_similar_player
+        # Ensure distinct player_id's by keeping only the entry with the HIGHEST similarity score for each player
+        # This means if a player appears in multiple years, we keep the year where they were MOST similar
+        if 'player_id' in active_pos_players.columns:
+            # Sort by similarity_score DESCENDING (highest similarity first)
+            # Then drop duplicates, keeping the FIRST occurrence (which is the highest similarity)
+            # This ensures each player_id appears only once, with their most similar year
+            active_pos_players = active_pos_players.sort_values('similarity_score', ascending=False)
+            active_pos_players = active_pos_players.drop_duplicates(subset=['player_id'], keep='first')
+            # Reset index after dropping duplicates
+            active_pos_players = active_pos_players.reset_index(drop=True)
+        
+        # Sort by similarity score (descending) and return top N distinct players
+        # Each player appears once, with their most similar year
+        top_players = active_pos_players.nlargest(top_n, 'similarity_score')
+        return top_players
 
 if __name__ == "__main__":
     # Example usage
@@ -94,16 +107,27 @@ if __name__ == "__main__":
         print(f"BLK: {pct_diff(blk, player_series['BLK']):4.1f}%")
         print(f"TOV: {pct_diff(tov, player_series['TOV']):4.1f}%")
 
-    # Example 1: Equal weights (default)
-    result1 = similar_player.predict_similar_player(pts, ast, reb, stl, blk, tov, 'G')
+    # Example 1: Equal weights (default) - get top 10
+    result1 = similar_player.predict_similar_player(pts, ast, reb, stl, blk, tov, 'G', top_n=10)
+    print("\nTOP 10 WITHOUT WEIGHTS:")
+    for idx, (_, player) in enumerate(result1.iterrows(), 1):
+        print(f"\n{idx}. {player['player']} - Similarity: {player['similarity_score']:.3f}")
+        print(f"   Stats: {player['PTS']:.1f} PTS, {player['AST']:.1f} AST, {player['REB']:.1f} REB, {player['STL']:.1f} STL, {player['BLK']:.1f} BLK, {player['TOV']:.1f} TOV")
 
-    # Example 2: Heavy weight on points, more weight on assists and rebounds
+    # Example 2: Heavy weight on points, more weight on assists and rebounds - get top 10
     weights = [3.0, 1.0, 1.0, 0.5, 0.5, 0.5]  # Weights for [PTS, AST, REB, STL, BLK, TOV] - emphasize points, de-emphasize others
-    result2 = similar_player.predict_similar_player(pts, ast, reb, stl, blk, tov, 'G', feature_weights=weights)
-    print_player_details(result1, "WITHOUT WEIGHTS:")
-    print_player_details(result2, "\nWITH HEAVY POINTS WEIGHT (100):")
+    result2 = similar_player.predict_similar_player(pts, ast, reb, stl, blk, tov, 'G', feature_weights=weights, top_n=10)
+    print("\n\nTOP 10 WITH HEAVY POINTS WEIGHT:")
+    for idx, (_, player) in enumerate(result2.iterrows(), 1):
+        print(f"\n{idx}. {player['player']} - Similarity: {player['similarity_score']:.3f}")
+        print(f"   Stats: {player['PTS']:.1f} PTS, {player['AST']:.1f} AST, {player['REB']:.1f} REB, {player['STL']:.1f} STL, {player['BLK']:.1f} BLK, {player['TOV']:.1f} TOV")
+    
+    # Example: Get just the top player (backward compatibility)
+    top_player = result1.iloc[0]
+    print_player_details(top_player, "\n\nMOST SIMILAR PLAYER (top 1):")
 
-    # Export model
-    # pickle.dump(similar_player, open(os.path.join("models", "similar_player_stat.pkl"), "wb"))
+    # Export SimilarPlayerStats model (i.e. class object with the dataframe of all active NBA
+    # players and the predict_similar_player method) - Based on the points weighted model
+    ## pickle.dump(similar_player, open(os.path.join("models", "similar_player_stat.pkl"), "wb"))
 
     print("Exported model to models/similar_player_stats.pkl")

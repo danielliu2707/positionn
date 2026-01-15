@@ -238,9 +238,10 @@ with tab1:
                 unsafe_allow_html=True
             )
             
-            # Get similar player prediction
+            # Get similar player prediction (returns DataFrame with top 10, get first one)
             similar_player_model = load_model(os.path.join("models", "similar_player_stat.pkl"))
-            similar_player = similar_player_model.predict_similar_player(pts, ast, trb, stl, blk, tov, predicted_pos, feature_weights=[3.0, 1.0, 1.0, 0.5, 0.5, 0.5])
+            similar_players_df = similar_player_model.predict_similar_player(pts, ast, trb, stl, blk, tov, predicted_pos, feature_weights=[3.0, 1.0, 1.0, 0.5, 0.5, 0.5], top_n=10)
+            similar_player = similar_players_df.iloc[0]  # Get most similar player
             similar_player_name = similar_player['player']
             similar_player_id = similar_player['player_id']
             similar_player_pts = np.round(similar_player['PTS'], 1)

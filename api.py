@@ -103,11 +103,31 @@ def predict_from_stats(payload: StatsInput):
         all_positions = stats_le.inverse_transform([0, 1, 2])
         position_prob_dict = {pos: float(prob) for pos, prob in zip(all_positions, predicted_proba)}
         
-        # Get similar player prediction
-        similar_player = similar_player_model.predict_similar_player(
+        # Get similar player prediction (returns DataFrame with top 10 players)
+        similar_players_df = similar_player_model.predict_similar_player(
             pts, ast, trb, stl, blk, tov, predicted_pos, 
-            feature_weights=[3.0, 1.0, 1.0, 0.5, 0.5, 0.5]
+            feature_weights=[3.0, 1.0, 1.0, 0.5, 0.5, 0.5],
+            top_n=10
         )
+        
+        # Format top 10 players for response
+        top_players = []
+        for idx, (_, player) in enumerate(similar_players_df.iterrows(), 1):
+            top_players.append({
+                "rank": idx,
+                "player_id": int(player['player_id']),
+                "name": str(player['player']),
+                "year": float(player['year']) if 'year' in player else None,
+                "similarity_score": float(player['similarity_score']),
+                "stats": {
+                    "points": float(np.round(player['PTS'], 1)),
+                    "assists": float(np.round(player['AST'], 1)),
+                    "rebounds": float(np.round(player['REB'], 1)),
+                    "steals": float(np.round(player['STL'], 1)),
+                    "blocks": float(np.round(player['BLK'], 1)),
+                    "turnovers": float(np.round(player['TOV'], 1))
+                }
+            })
         
         # Get final position name
         final_position = get_position(predicted_pos, position_dict)
@@ -118,19 +138,7 @@ def predict_from_stats(payload: StatsInput):
             "position_code": predicted_pos,
             "probability": float(position_prob_dict[predicted_pos]),
             "probabilities": position_prob_dict,
-            "twin": {
-                "player_id": int(similar_player['player_id']),
-                "name": str(similar_player['player']),
-                "year": float(similar_player['year'])
-            },
-            "twin_stats": {
-                "points": float(np.round(similar_player['PTS'], 1)),
-                "assists": float(np.round(similar_player['AST'], 1)),
-                "rebounds": float(np.round(similar_player['REB'], 1)),
-                "steals": float(np.round(similar_player['STL'], 1)),
-                "blocks": float(np.round(similar_player['BLK'], 1)),
-                "turnovers": float(np.round(similar_player['TOV'], 1))
-            }
+            "top_players": top_players  # top_players[0] is the most similar
         }
     except ZeroDivisionError:
         raise HTTPException(status_code=400, detail="Turnovers cannot be zero when calculating assist-to-turnover ratio")
