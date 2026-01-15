@@ -12,7 +12,7 @@ Simply enter your physical attributes or stats, and with one click, discover you
 <br>
 
 Try the app on streamlit <a href="https://positionn.streamlit.app/">here</a> 👈    
-Try the app on my website <a href="https://positionn.streamlit.app/">here</a> 👈  (much faster)
+Try the app on my website <a href="https://www.danielliu.xyz/projects/positionn/">here</a> 👈  (much faster)
 
 ### For developers:
 
