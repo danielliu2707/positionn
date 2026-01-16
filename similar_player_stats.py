@@ -128,5 +128,6 @@ if __name__ == "__main__":
 
     # Export SimilarPlayerStats model (i.e. class object with the dataframe of all active NBA
     # players and the predict_similar_player method) - Based on the points weighted model
+    
     ## pickle.dump(similar_player, open(os.path.join("models", "similar_player_stat.pkl"), "wb"))
-    ##print("Exported model to models/similar_player_stats.pkl")
+    ## print("Exported model to models/similar_player_stats.pkl")
