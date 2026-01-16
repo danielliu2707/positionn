@@ -138,8 +138,8 @@ def process_player_stats(stats_df, player_name, player_position, player_id):
     df['year'] = df['SEASON_ID'].apply(convert_season_to_year)
     df['age'] = pd.to_numeric(df['PLAYER_AGE'], errors='coerce')
     
-    # Filter for seasons between 2015-2024
-    df = df[df['year'].between(2015, 2024)]
+    # Filter for seasons between 2015-2026
+    df = df[df['year'].between(2015, 2026)]
     
     # Select and reorder final columns
     result = df[[
@@ -215,7 +215,7 @@ def process_player_batch(players_batch, batch_num):
     if all_stats:
         final_df = pd.concat(all_stats, ignore_index=True)
         timestamp = datetime.now().strftime('%Y%m%d')
-        output_file = f'data/nba_current_player_stats_{timestamp}_batch{batch_num}.csv'
+        output_file = f'data/api_player_stats_batch/nba_current_player_stats_{timestamp}_batch{batch_num}.csv'
         final_df.to_csv(output_file, index=False)
         print(f"\nBatch {batch_num} saved to {output_file}")
         print(f"Batch {batch_num} Summary:")
